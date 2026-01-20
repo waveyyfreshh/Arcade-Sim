@@ -110,17 +110,17 @@
         .game-card h3 { margin: 15px 0 5px 0; font-size: 1.5rem; }
         .game-card p { margin: 0; font-size: 0.9rem; color: #aaa; }
 
-        /* --- RARITY SYSTEM --- */
-        .rarity-trash { border-bottom: 4px solid #b0c3d9 !important; color: #b0c3d9 !important; }
-        .rarity-loss { border-bottom: 4px solid #5e98d9 !important; color: #5e98d9 !important; }
-        .rarity-common { border-bottom: 4px solid #4b69ff !important; color: #4b69ff !important; }
-        .rarity-epic { border-bottom: 4px solid #8847ff !important; color: #8847ff !important; }
-        .rarity-legendary { border-bottom: 4px solid #d32ce6 !important; color: #d32ce6 !important; }
-        .rarity-ancient { border-bottom: 4px solid #eb4b4b !important; color: #eb4b4b !important; }
+        /* --- RARITY SYSTEM (UPDATED COLORS) --- */
+        .rarity-trash { border-bottom: 4px solid #b0c3d9 !important; color: #b0c3d9 !important; } /* Grey */
+        .rarity-loss { border-bottom: 4px solid #5e98d9 !important; color: #5e98d9 !important; } /* Light Blue */
+        .rarity-common { border-bottom: 4px solid #4b69ff !important; color: #4b69ff !important; } /* Blue */
+        .rarity-epic { border-bottom: 4px solid #8847ff !important; color: #8847ff !important; } /* Purple */
+        .rarity-legendary { border-bottom: 4px solid #d32ce6 !important; color: #d32ce6 !important; } /* Pink */
+        .rarity-ancient { border-bottom: 4px solid #eb4b4b !important; color: #eb4b4b !important; } /* Red */
         .rarity-gold { 
             border-bottom: 4px solid #ffd700 !important; 
             box-shadow: inset 0 -10px 20px rgba(255, 215, 0, 0.2) !important;
-        }
+        } /* Gold */
 
         /* --- NEW SPINNER LAYOUT --- */
         #case-opener {
@@ -154,11 +154,11 @@
         
         /* IMAGE STYLING */
         .skin-img {
-            width: 85%;
-            height: 70px;
+            width: 90px;
+            height: 90px;
             object-fit: contain;
             margin-bottom: 5px;
-            filter: drop-shadow(0 4px 6px rgba(0,0,0,0.5));
+            filter: drop-shadow(0 4px 6px rgba(0,0,0,0.3));
         }
 
         .spinner-text-h { font-size: 0.7rem; font-weight: bold; text-transform: uppercase; max-width: 110px; text-align: center; white-space: normal; line-height: 1.1; color: #ddd; }
@@ -535,16 +535,14 @@
         'b3': '#ff9100'  // Orange
     };
 
-    function getRarityClass(value, cost) {
-        if (value === 0) return 'rarity-trash';
-        if (value < cost) return 'rarity-loss';
-        // Updated thresholds for CS2 skin values roughly
-        if (value >= 500) return 'rarity-gold'; // Knife/Gold
-        if (value >= 100) return 'rarity-ancient'; // Red
-        if (value >= 25) return 'rarity-legendary'; // Pink
-        if (value >= 5) return 'rarity-epic'; // Purple
-        if (value >= 1) return 'rarity-common'; // Blue
-        return 'rarity-loss'; // Light Blue / Grey
+    // --- NEW RARITY LOGIC (Chance Based) ---
+    // Takes the item's probability (0.01 = 1%) and returns color class
+    function getRarityClass(chance) {
+        if (chance <= 0.01) return 'rarity-gold';      // < 1% (Contraband)
+        if (chance <= 0.05) return 'rarity-ancient';   // < 5% (Covert)
+        if (chance <= 0.15) return 'rarity-legendary'; // < 15% (Classified)
+        if (chance <= 0.35) return 'rarity-epic';      // < 35% (Restricted)
+        return 'rarity-common';                        // Everything else (Mil-Spec)
     }
 
     const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
@@ -580,67 +578,146 @@
         });
     }
 
-    // --- NEW CUSTOM CS2 CASES (2025 Prices, Fresh Links) ---
-    // Images sourced from community CDN. Odds adjusted for House Edge (~96% RTP).
-    const casesDB = [
+    // --- TECH & STREETWEAR (Reliable DummyJSON) ---
+    // Rarity based on 'chance': Gold (<1%), Red (<5%), Pink (<15%), Purple (<35%), Blue (Common)
+const casesDB = [
+        // --- LOW RISK / BUDGET CASES ---
         {
-            id: 0, name: "Urban Covert", cost: 2.50,
-            image: "https://community.cloudflare.steamstatic.com/economy/image/-9a81dlWLwJ2UUGcVs_nsVtzdOEdtWwKGZZLQHTxDZ7I56KU0Zwwo4NUX4oFJZEHLbXU5A1PIYQNqhpOSV-fRPasw8rsUFJ5KBFZv668FFQ1naDOQi4SuNnkw4XYk6D1Zu6FlG9U6pZz3r2Z8Y6s2lfs-0NqZ233cI6TI1dvZwuC-1Pqlenqh5697c_Pm3FqvCMj5y7cmh3kg01MZuM50vWacw/360fx360f",
+            id: 0, name: "Grocery Run", cost: 10.00,
+            image: "https://cdn.dummyjson.com/products/images/groceries/Beef%20Steak/thumbnail.png",
             items: [
-                {name:"M4A1-S | Printstream", value:85, chance:0.005, icon:"https://community.cloudflare.steamstatic.com/economy/image/-9a81dlWLwJ2UUGcVs_nsVtzdOEdtWwKGZZLQHTxDZ7I56KU0Zwwo4NUX4oFJZEHLbXH5A1PIYQNqhpOSV-fRPasw8rsUFJ5KBFZv668FFQ1naDOQi4SuNnkw4XYk6D1Zu6FlG9U6pZz3r2Z8Y6s2lfs-0NqZ233cI6TI1dvZwuC-1Pqlenqh5697c_Pm3FqvCMj5y7cmh3kg01MZuM50vWacw/360fx360f"},
-                {name:"USP-S | Kill Confirmed", value:45, chance:0.012, icon:"https://community.cloudflare.steamstatic.com/economy/image/-9a81dlWLwJ2UUGcVs_nsVtzdOEdtWwKGZZLQHTxDZ7I56KU0Zwwo4NUX4oFJZEHLbXH5A1PIYQNqhpOSV-fRPasw8rsUFJ5KBFZv668FFQ1naDOQi4SuNnkw4XYk6D1Zu6FlG9U6pZz3r2Z8Y6s2lfs-0NqZ233cI6TI1dvZwuC-1Pqlenqh5697c_Pm3FqvCMj5y7cmh3kg01MZuM50vWacw/360fx360f"},
-                {name:"AK-47 | Slate", value:8, chance:0.08, icon:"https://community.cloudflare.steamstatic.com/economy/image/-9a81dlWLwJ2UUGcVs_nsVtzdOEdtWwKGZZLQHTxDZ7I56KU0Zwwo4NUX4oFJZEHLbXH5A1PIYQNqhpOSV-fRPasw8rsUFJ5KBFZv668FFQ1naDOQi4SuNnkw4XYk6D1Zu6FlG9U6pZz3r2Z8Y6s2lfs-0NqZ233cI6TI1dvZwuC-1Pqlenqh5697c_Pm3FqvCMj5y7cmh3kg01MZuM50vWacw/360fx360f"},
-                {name:"Glock-18 | Urban Rubble", value:0.50, chance:0.25, icon:"https://community.cloudflare.steamstatic.com/economy/image/-9a81dlWLwJ2UUGcVs_nsVtzdOEdtWwKGZZLQHTxDZ7I56KU0Zwwo4NUX4oFJZEHLbXH5A1PIYQNqhpOSV-fRPasw8rsUFJ5KBFZv668FFQ1naDOQi4SuNnkw4XYk6D1Zu6FlG9U6pZz3r2Z8Y6s2lfs-0NqZ233cI6TI1dvZwuC-1Pqlenqh5697c_Pm3FqvCMj5y7cmh3kg01MZuM50vWacw/360fx360f"},
-                {name:"P250 | Sand Dune", value:0.05, chance:0.35, icon:"https://community.cloudflare.steamstatic.com/economy/image/-9a81dlWLwJ2UUGcVs_nsVtzdOEdtWwKGZZLQHTxDZ7I56KU0Zwwo4NUX4oFJZEHLbXH5A1PIYQNqhpOSV-fRPasw8rsUFJ5KBFZv668FFQ1naDOQi4SuNnkw4XYk6D1Zu6FlG9U6pZz3r2Z8Y6s2lfs-0NqZ233cI6TI1dvZwuC-1Pqlenqh5697c_Pm3FqvCMj5y7cmh3kg01MZuM50vWacw/360fx360f"},
-                {name:"Nova | Polar Mesh", value:0.03, chance:0.303, icon:"https://community.cloudflare.steamstatic.com/economy/image/-9a81dlWLwJ2UUGcVs_nsVtzdOEdtWwKGZZLQHTxDZ7I56KU0Zwwo4NUX4oFJZEHLbXH5A1PIYQNqhpOSV-fRPasw8rsUFJ5KBFZv668FFQ1naDOQi4SuNnkw4XYk6D1Zu6FlG9U6pZz3r2Z8Y6s2lfs-0NqZ233cI6TI1dvZwuC-1Pqlenqh5697c_Pm3FqvCMj5y7cmh3kg01MZuM50vWacw/360fx360f"}
+                {name:"Beef Steak", value:50, chance:0.02, icon:"https://cdn.dummyjson.com/products/images/groceries/Beef%20Steak/thumbnail.png"}, // Jackpot
+                {name:"Honey Jar", value:25, chance:0.08, icon:"https://cdn.dummyjson.com/products/images/groceries/Honey%20Jar/thumbnail.png"},
+                {name:"Ice Cream", value:12, chance:0.25, icon:"https://cdn.dummyjson.com/products/images/groceries/Ice%20Cream/thumbnail.png"}, // Profit
+                {name:"Cooking Oil", value:8, chance:0.35, icon:"https://cdn.dummyjson.com/products/images/groceries/Cooking%20Oil/thumbnail.png"},
+                {name:"Green Apple", value:2, chance:0.30, icon:"https://cdn.dummyjson.com/products/images/groceries/Apple/thumbnail.png"}
             ]
         },
         {
-            id: 1, name: "Neon Nights", cost: 5.00,
-            image: "https://community.cloudflare.steamstatic.com/economy/image/-9a81dlWLwJ2UUGcVs_nsVtzdOEdtWwKGZZLQHTxDZ7I56KU0Zwwo4NUX4oFJZEHLbXH5A1PIYQNqhpOSV-fRPasw8rsUFJ5KBFZv668FFQ1naDOQi4SuNnkw4XYk6D1Zu6FlG9U6pZz3r2Z8Y6s2lfs-0NqZ233cI6TI1dvZwuC-1Pqlenqh5697c_Pm3FqvCMj5y7cmh3kg01MZuM50vWacw/360fx360f",
+            id: 1, name: "Spare Parts", cost: 25.00,
+            image: "https://cdn.dummyjson.com/products/images/automotive/Rim/thumbnail.png",
             items: [
-                {name:"AK-47 | Neon Rider", value:110, chance:0.006, icon:"https://community.cloudflare.steamstatic.com/economy/image/-9a81dlWLwJ2UUGcVs_nsVtzdOEdtWwKGZZLQHTxDZ7I56KU0Zwwo4NUX4oFJZEHLbXH5A1PIYQNqhpOSV-fRPasw8rsUFJ5KBFZv668FFQ1naDOQi4SuNnkw4XYk6D1Zu6FlG9U6pZz3r2Z8Y6s2lfs-0NqZ233cI6TI1dvZwuC-1Pqlenqh5697c_Pm3FqvCMj5y7cmh3kg01MZuM50vWacw/360fx360f"},
-                {name:"MAC-10 | Neon Rider", value:18, chance:0.04, icon:"https://community.cloudflare.steamstatic.com/economy/image/-9a81dlWLwJ2UUGcVs_nsVtzdOEdtWwKGZZLQHTxDZ7I56KU0Zwwo4NUX4oFJZEHLbXH5A1PIYQNqhpOSV-fRPasw8rsUFJ5KBFZv668FFQ1naDOQi4SuNnkw4XYk6D1Zu6FlG9U6pZz3r2Z8Y6s2lfs-0NqZ233cI6TI1dvZwuC-1Pqlenqh5697c_Pm3FqvCMj5y7cmh3kg01MZuM50vWacw/360fx360f"},
-                {name:"AWP | Chromatic Aberration", value:12, chance:0.08, icon:"https://community.cloudflare.steamstatic.com/economy/image/-9a81dlWLwJ2UUGcVs_nsVtzdOEdtWwKGZZLQHTxDZ7I56KU0Zwwo4NUX4oFJZEHLbXH5A1PIYQNqhpOSV-fRPasw8rsUFJ5KBFZv668FFQ1naDOQi4SuNnkw4XYk6D1Zu6FlG9U6pZz3r2Z8Y6s2lfs-0NqZ233cI6TI1dvZwuC-1Pqlenqh5697c_Pm3FqvCMj5y7cmh3kg01MZuM50vWacw/360fx360f"},
-                {name:"MP9 | Mount Fuji", value:3, chance:0.25, icon:"https://community.cloudflare.steamstatic.com/economy/image/-9a81dlWLwJ2UUGcVs_nsVtzdOEdtWwKGZZLQHTxDZ7I56KU0Zwwo4NUX4oFJZEHLbXH5A1PIYQNqhpOSV-fRPasw8rsUFJ5KBFZv668FFQ1naDOQi4SuNnkw4XYk6D1Zu6FlG9U6pZz3r2Z8Y6s2lfs-0NqZ233cI6TI1dvZwuC-1Pqlenqh5697c_Pm3FqvCMj5y7cmh3kg01MZuM50vWacw/360fx360f"},
-                {name:"Five-SeveN | Berries", value:1.50, chance:0.30, icon:"https://community.cloudflare.steamstatic.com/economy/image/-9a81dlWLwJ2UUGcVs_nsVtzdOEdtWwKGZZLQHTxDZ7I56KU0Zwwo4NUX4oFJZEHLbXH5A1PIYQNqhpOSV-fRPasw8rsUFJ5KBFZv668FFQ1naDOQi4SuNnkw4XYk6D1Zu6FlG9U6pZz3r2Z8Y6s2lfs-0NqZ233cI6TI1dvZwuC-1Pqlenqh5697c_Pm3FqvCMj5y7cmh3kg01MZuM50vWacw/360fx360f"},
-                {name:"G3SG1 | Digital Mesh", value:0.10, chance:0.324, icon:"https://community.cloudflare.steamstatic.com/economy/image/-9a81dlWLwJ2UUGcVs_nsVtzdOEdtWwKGZZLQHTxDZ7I56KU0Zwwo4NUX4oFJZEHLbXH5A1PIYQNqhpOSV-fRPasw8rsUFJ5KBFZv668FFQ1naDOQi4SuNnkw4XYk6D1Zu6FlG9U6pZz3r2Z8Y6s2lfs-0NqZ233cI6TI1dvZwuC-1Pqlenqh5697c_Pm3FqvCMj5y7cmh3kg01MZuM50vWacw/360fx360f"}
+                {name:"Car Rim Set", value:400, chance:0.005, icon:"https://cdn.dummyjson.com/products/images/automotive/Rim/thumbnail.png"},
+                {name:"Spare Tire", value:150, chance:0.03, icon:"https://cdn.dummyjson.com/products/images/automotive/Spare%20Tire/thumbnail.png"},
+                {name:"Battery Charger", value:50, chance:0.15, icon:"https://cdn.dummyjson.com/products/images/automotive/Battery%20Charger/thumbnail.png"},
+                {name:"Brake Kit", value:20, chance:0.35, icon:"https://cdn.dummyjson.com/products/images/automotive/Brake%20Shoes/thumbnail.png"},
+                {name:"Side Mirror", value:10, chance:0.465, icon:"https://cdn.dummyjson.com/products/images/automotive/Side%20Mirror/thumbnail.png"}
             ]
         },
         {
-            id: 2, name: "Heavy Metal", cost: 8.50,
-            image: "https://community.cloudflare.steamstatic.com/economy/image/-9a81dlWLwJ2UUGcVs_nsVtzdOEdtWwKGZZLQHTxDZ7I56KU0Zwwo4NUX4oFJZEHLbXH5A1PIYQNqhpOSV-fRPasw8rsUFJ5KBFZv668FFQ1naDOQi4SuNnkw4XYk6D1Zu6FlG9U6pZz3r2Z8Y6s2lfs-0NqZ233cI6TI1dvZwuC-1Pqlenqh5697c_Pm3FqvCMj5y7cmh3kg01MZuM50vWacw/360fx360f",
+            id: 2, name: "Home Basics", cost: 40.00,
+            image: "https://cdn.dummyjson.com/products/images/home-decoration/Plant%20Hanger%20For%20Home/thumbnail.png",
             items: [
-                {name:"Karambit | Black Laminate", value:950, chance:0.001, icon:"https://community.cloudflare.steamstatic.com/economy/image/-9a81dlWLwJ2UUGcVs_nsVtzdOEdtWwKGZZLQHTxDZ7I56KU0Zwwo4NUX4oFJZEHLbXH5A1PIYQNqhpOSV-fRPasw8rsUFJ5KBFZv668FFQ1naDOQi4SuNnkw4XYk6D1Zu6FlG9U6pZz3r2Z8Y6s2lfs-0NqZ233cI6TI1dvZwuC-1Pqlenqh5697c_Pm3FqvCMj5y7cmh3kg01MZuM50vWacw/360fx360f"},
-                {name:"Deagle | Printstream", value:65, chance:0.02, icon:"https://community.cloudflare.steamstatic.com/economy/image/-9a81dlWLwJ2UUGcVs_nsVtzdOEdtWwKGZZLQHTxDZ7I56KU0Zwwo4NUX4oFJZEHLbXH5A1PIYQNqhpOSV-fRPasw8rsUFJ5KBFZv668FFQ1naDOQi4SuNnkw4XYk6D1Zu6FlG9U6pZz3r2Z8Y6s2lfs-0NqZ233cI6TI1dvZwuC-1Pqlenqh5697c_Pm3FqvCMj5y7cmh3kg01MZuM50vWacw/360fx360f"},
-                {name:"M4A4 | Cyber Security", value:25, chance:0.06, icon:"https://community.cloudflare.steamstatic.com/economy/image/-9a81dlWLwJ2UUGcVs_nsVtzdOEdtWwKGZZLQHTxDZ7I56KU0Zwwo4NUX4oFJZEHLbXH5A1PIYQNqhpOSV-fRPasw8rsUFJ5KBFZv668FFQ1naDOQi4SuNnkw4XYk6D1Zu6FlG9U6pZz3r2Z8Y6s2lfs-0NqZ233cI6TI1dvZwuC-1Pqlenqh5697c_Pm3FqvCMj5y7cmh3kg01MZuM50vWacw/360fx360f"},
-                {name:"Glock-18 | Ironwork", value:3, chance:0.25, icon:"https://community.cloudflare.steamstatic.com/economy/image/-9a81dlWLwJ2UUGcVs_nsVtzdOEdtWwKGZZLQHTxDZ7I56KU0Zwwo4NUX4oFJZEHLbXH5A1PIYQNqhpOSV-fRPasw8rsUFJ5KBFZv668FFQ1naDOQi4SuNnkw4XYk6D1Zu6FlG9U6pZz3r2Z8Y6s2lfs-0NqZ233cI6TI1dvZwuC-1Pqlenqh5697c_Pm3FqvCMj5y7cmh3kg01MZuM50vWacw/360fx360f"},
-                {name:"MAG-7 | Silver", value:1, chance:0.30, icon:"https://community.cloudflare.steamstatic.com/economy/image/-9a81dlWLwJ2UUGcVs_nsVtzdOEdtWwKGZZLQHTxDZ7I56KU0Zwwo4NUX4oFJZEHLbXH5A1PIYQNqhpOSV-fRPasw8rsUFJ5KBFZv668FFQ1naDOQi4SuNnkw4XYk6D1Zu6FlG9U6pZz3r2Z8Y6s2lfs-0NqZ233cI6TI1dvZwuC-1Pqlenqh5697c_Pm3FqvCMj5y7cmh3kg01MZuM50vWacw/360fx360f"},
-                {name:"P2000 | Oceanic", value:0.15, chance:0.369, icon:"https://community.cloudflare.steamstatic.com/economy/image/-9a81dlWLwJ2UUGcVs_nsVtzdOEdtWwKGZZLQHTxDZ7I56KU0Zwwo4NUX4oFJZEHLbXH5A1PIYQNqhpOSV-fRPasw8rsUFJ5KBFZv668FFQ1naDOQi4SuNnkw4XYk6D1Zu6FlG9U6pZz3r2Z8Y6s2lfs-0NqZ233cI6TI1dvZwuC-1Pqlenqh5697c_Pm3FqvCMj5y7cmh3kg01MZuM50vWacw/360fx360f"}
+                {name:"Decoration Set", value:200, chance:0.01, icon:"https://cdn.dummyjson.com/products/images/home-decoration/Decoration%20Swing/thumbnail.png"},
+                {name:"Family Tree", value:100, chance:0.05, icon:"https://cdn.dummyjson.com/products/images/home-decoration/Family%20Tree%20Photo%20Frame/thumbnail.png"},
+                {name:"Wall Clock", value:45, chance:0.20, icon:"https://cdn.dummyjson.com/products/images/home-decoration/House%20Showpiece%20Plant/thumbnail.png"},
+                {name:"Plant Hanger", value:25, chance:0.35, icon:"https://cdn.dummyjson.com/products/images/home-decoration/Plant%20Hanger%20For%20Home/thumbnail.png"},
+                {name:"Table Lamp", value:15, chance:0.39, icon:"https://cdn.dummyjson.com/products/images/home-decoration/Table%20Lamp/thumbnail.png"}
+            ]
+        },
+
+        // --- MEDIUM RISK / STREETWEAR ---
+        {
+            id: 3, name: "Sneakerhead", cost: 75.00,
+            image: "https://cdn.dummyjson.com/products/images/mens-shoes/Nike%20Air%20Jordan%201%20Red%20And%20Black/thumbnail.png",
+            items: [
+                {name:"Jordan 1 Red", value:450, chance:0.008, icon:"https://cdn.dummyjson.com/products/images/mens-shoes/Nike%20Air%20Jordan%201%20Red%20And%20Black/thumbnail.png"},
+                {name:"Nike Basketball", value:180, chance:0.05, icon:"https://cdn.dummyjson.com/products/images/mens-shoes/Nike%20Basketball%20Shoe/thumbnail.png"},
+                {name:"Puma Future", value:110, chance:0.15, icon:"https://cdn.dummyjson.com/products/images/mens-shoes/Puma%20Future%20Rider%20Trainers/thumbnail.png"},
+                {name:"Casual Sneaker", value:50, chance:0.30, icon:"https://cdn.dummyjson.com/products/images/mens-shoes/Sports%20Sneakers%20Off%20White%20&%20Red/thumbnail.png"},
+                {name:"Formal Shoe", value:20, chance:0.492, icon:"https://cdn.dummyjson.com/products/images/mens-shoes/Formal%20Shoe/thumbnail.png"}
             ]
         },
         {
-            id: 3, name: "Golden Era", cost: 25.00,
-            image: "https://community.cloudflare.steamstatic.com/economy/image/-9a81dlWLwJ2UUGcVs_nsVtzdOEdtWwKGZZLQHTxDZ7I56KU0Zwwo4NUX4oFJZEHLbXH5A1PIYQNqhpOSV-fRPasw8rsUFJ5KBFZv668FFQ1naDOQi4SuNnkw4XYk6D1Zu6FlG9U6pZz3r2Z8Y6s2lfs-0NqZ233cI6TI1dvZwuC-1Pqlenqh5697c_Pm3FqvCMj5y7cmh3kg01MZuM50vWacw/360fx360f",
+            id: 4, name: "Fragrance Lab", cost: 90.00,
+            image: "https://cdn.dummyjson.com/products/images/fragrances/Gucci%20Bloom%20Eau%20de/thumbnail.png",
             items: [
-                {name:"AWP | Dragon Lore", value:5000, chance:0.0005, icon:"https://community.cloudflare.steamstatic.com/economy/image/-9a81dlWLwJ2UUGcVs_nsVtzdOEdtWwKGZZLQHTxDZ7I56KU0Zwwo4NUX4oFJZEHLbXH5A1PIYQNqhpOSV-fRPasw8rsUFJ5KBFZv668FFQ1naDOQi4SuNnkw4XYk6D1Zu6FlG9U6pZz3r2Z8Y6s2lfs-0NqZ233cI6TI1dvZwuC-1Pqlenqh5697c_Pm3FqvCMj5y7cmh3kg01MZuM50vWacw/360fx360f"},
-                {name:"AK-47 | Gold Arabesque", value:2500, chance:0.001, icon:"https://community.cloudflare.steamstatic.com/economy/image/-9a81dlWLwJ2UUGcVs_nsVtzdOEdtWwKGZZLQHTxDZ7I56KU0Zwwo4NUX4oFJZEHLbXH5A1PIYQNqhpOSV-fRPasw8rsUFJ5KBFZv668FFQ1naDOQi4SuNnkw4XYk6D1Zu6FlG9U6pZz3r2Z8Y6s2lfs-0NqZ233cI6TI1dvZwuC-1Pqlenqh5697c_Pm3FqvCMj5y7cmh3kg01MZuM50vWacw/360fx360f"},
-                {name:"M4A1-S | Golden Coil", value:80, chance:0.08, icon:"https://community.cloudflare.steamstatic.com/economy/image/-9a81dlWLwJ2UUGcVs_nsVtzdOEdtWwKGZZLQHTxDZ7I56KU0Zwwo4NUX4oFJZEHLbXH5A1PIYQNqhpOSV-fRPasw8rsUFJ5KBFZv668FFQ1naDOQi4SuNnkw4XYk6D1Zu6FlG9U6pZz3r2Z8Y6s2lfs-0NqZ233cI6TI1dvZwuC-1Pqlenqh5697c_Pm3FqvCMj5y7cmh3kg01MZuM50vWacw/360fx360f"},
-                {name:"FAMAS | Commemoration", value:15, chance:0.25, icon:"https://community.cloudflare.steamstatic.com/economy/image/-9a81dlWLwJ2UUGcVs_nsVtzdOEdtWwKGZZLQHTxDZ7I56KU0Zwwo4NUX4oFJZEHLbXH5A1PIYQNqhpOSV-fRPasw8rsUFJ5KBFZv668FFQ1naDOQi4SuNnkw4XYk6D1Zu6FlG9U6pZz3r2Z8Y6s2lfs-0NqZ233cI6TI1dvZwuC-1Pqlenqh5697c_Pm3FqvCMj5y7cmh3kg01MZuM50vWacw/360fx360f"},
-                {name:"Five-SeveN | Copper Galaxy", value:5, chance:0.30, icon:"https://community.cloudflare.steamstatic.com/economy/image/-9a81dlWLwJ2UUGcVs_nsVtzdOEdtWwKGZZLQHTxDZ7I56KU0Zwwo4NUX4oFJZEHLbXH5A1PIYQNqhpOSV-fRPasw8rsUFJ5KBFZv668FFQ1naDOQi4SuNnkw4XYk6D1Zu6FlG9U6pZz3r2Z8Y6s2lfs-0NqZ233cI6TI1dvZwuC-1Pqlenqh5697c_Pm3FqvCMj5y7cmh3kg01MZuM50vWacw/360fx360f"},
-                {name:"UMP-45 | Gold Bismuth", value:1, chance:0.3685, icon:"https://community.cloudflare.steamstatic.com/economy/image/-9a81dlWLwJ2UUGcVs_nsVtzdOEdtWwKGZZLQHTxDZ7I56KU0Zwwo4NUX4oFJZEHLbXH5A1PIYQNqhpOSV-fRPasw8rsUFJ5KBFZv668FFQ1naDOQi4SuNnkw4XYk6D1Zu6FlG9U6pZz3r2Z8Y6s2lfs-0NqZ233cI6TI1dvZwuC-1Pqlenqh5697c_Pm3FqvCMj5y7cmh3kg01MZuM50vWacw/360fx360f"}
+                {name:"Gucci Bloom", value:300, chance:0.01, icon:"https://cdn.dummyjson.com/products/images/fragrances/Gucci%20Bloom%20Eau%20de/thumbnail.png"},
+                {name:"Dior J'adore", value:180, chance:0.06, icon:"https://cdn.dummyjson.com/products/images/fragrances/Dior%20J'adore/thumbnail.png"},
+                {name:"Dolce Shine", value:110, chance:0.18, icon:"https://cdn.dummyjson.com/products/images/fragrances/Dolce%20Shine%20Eau%20de/thumbnail.png"},
+                {name:"CK One", value:55, chance:0.35, icon:"https://cdn.dummyjson.com/products/images/fragrances/Calvin%20Klein%20CK%20One/thumbnail.png"},
+                {name:"Travel Spray", value:15, chance:0.40, icon:"https://cdn.dummyjson.com/products/images/beauty/Travel%20Atomizer/thumbnail.png"}
             ]
         },
         {
-            id: 4, name: "Knife Club", cost: 95.00,
-            image: "https://community.cloudflare.steamstatic.com/economy/image/-9a81dlWLwJ2UUGcVs_nsVtzdOEdtWwKGZZLQHTxDZ7I56KU0Zwwo4NUX4oFJZEHLbXH5A1PIYQNqhpOSV-fRPasw8rsUFJ5KBFZv668FFQ1naDOQi4SuNnkw4XYk6D1Zu6FlG9U6pZz3r2Z8Y6s2lfs-0NqZ233cI6TI1dvZwuC-1Pqlenqh5697c_Pm3FqvCMj5y7cmh3kg01MZuM50vWacw/360fx360f",
+            id: 5, name: "Gamer Box", cost: 120.00,
+            image: "https://cdn.dummyjson.com/products/images/laptops/Asus%20Zenbook%20Pro%20Dual%20Screen%20Laptop/thumbnail.png",
             items: [
-                {name:"Butterfly | Fade", value:1800, chance:0.005, icon:"https://community.cloudflare.steamstatic.com/economy/image/-9a81dlWLwJ2UUGcVs_nsVtzdOEdtWwKGZZLQHTxDZ7I56KU0Zwwo4NUX4oFJZEHLbXH5A1PIYQNqhpOSV-fRPasw8rsUFJ5KBFZv668FFQ1naDOQi4SuNnkw4XYk6D1Zu6FlG9U6pZz3r2Z8Y6s2lfs-0NqZ233cI6TI1dvZwuC-1Pqlenqh5697c_Pm3FqvCMj5y7cmh3kg01MZuM50vWacw/360fx360f"},
-                {name:"Karambit | Doppler", value:900, chance:0.015, icon:"https://community.cloudflare.steamstatic.com/economy/image/-9a81dlWLwJ2UUGcVs_nsVtzdOEdtWwKGZZLQHTxDZ7I56KU0Zwwo4NUX4oFJZEHLbXH5A1PIYQNqhpOSV-fRPasw8rsUFJ5KBFZv668FFQ1naDOQi4SuNnkw4XYk6D1Zu6FlG9U6pZz3r2Z8Y6s2lfs-0NqZ233cI6TI1dvZwuC-1Pqlenqh5697c_Pm3FqvCMj5y7cmh3kg01MZuM50vWacw/360fx360f"},
-                {name:"M9 Bayonet | Tiger Tooth", value:600, chance:0.03, icon:"https://community.cloudflare.steamstatic.com/economy/image/-9a81dlWLwJ2UUGcVs_nsVtzdOEdtWwKGZZLQHTxDZ7I56KU0Zwwo4NUX4oFJZEHLbXH5A1PIYQNqhpOSV-fRPasw8rsUFJ5KBFZv668FFQ1naDOQi4SuNnkw4XYk6D1Zu6FlG9U6pZz3r2Z8Y6s2lfs-0NqZ233cI6TI1dvZwuC-1Pqlenqh5697c_Pm3FqvCMj5y7cmh3kg01MZuM50vWacw/360fx360f"},
-                {name:"Bayonet | Rust Coat", value:150, chance:0.15, icon:"https://community.cloudflare.steamstatic.com/economy/image/-9a81dlWLwJ2UUGcVs_nsVtzdOEdtWwKGZZLQHTxDZ7I56KU0Zwwo4NUX4oFJZEHLbXH5A1PIYQNqhpOSV-fRPasw8rsUFJ5KBFZv668FFQ1naDOQi4SuNnkw4XYk6D1Zu6FlG9U6pZz3r2Z8Y6s2lfs-0NqZ233cI6TI1dvZwuC-1Pqlenqh5697c_Pm3FqvCMj5y7cmh3kg01MZuM50vWacw/360fx360f"},
-                {name:"Gut Knife | Safari Mesh", value:70, chance:0.30, icon:"https://community.cloudflare.steamstatic.com/economy/image/-9a81dlWLwJ2UUGcVs_nsVtzdOEdtWwKGZZLQHTxDZ7I56KU0Zwwo4NUX4oFJZEHLbXH5A1PIYQNqhpOSV-fRPasw8rsUFJ5KBFZv668FFQ1naDOQi4SuNnkw4XYk6D1Zu6FlG9U6pZz3r2Z8Y6s2lfs-0NqZ233cI6TI1dvZwuC-1Pqlenqh5697c_Pm3FqvCMj5y7cmh3kg01MZuM50vWacw/360fx360f"},
-                {name:"Navaja Knife | Scorched", value:55, chance:0.50, icon:"https://community.cloudflare.steamstatic.com/economy/image/-9a81dlWLwJ2UUGcVs_nsVtzdOEdtWwKGZZLQHTxDZ7I56KU0Zwwo4NUX4oFJZEHLbXH5A1PIYQNqhpOSV-fRPasw8rsUFJ5KBFZv668FFQ1naDOQi4SuNnkw4XYk6D1Zu6FlG9U6pZz3r2Z8Y6s2lfs-0NqZ233cI6TI1dvZwuC-1Pqlenqh5697c_Pm3FqvCMj5y7cmh3kg01MZuM50vWacw/360fx360f"}
+                {name:"Asus Zenbook Pro", value:1800, chance:0.005, icon:"https://cdn.dummyjson.com/products/images/laptops/Asus%20Zenbook%20Pro%20Dual%20Screen%20Laptop/thumbnail.png"},
+                {name:"Huawei Matebook", value:900, chance:0.03, icon:"https://cdn.dummyjson.com/products/images/laptops/Huawei%20Matebook%20X%20Pro/thumbnail.png"},
+                {name:"Lenovo Yoga", value:600, chance:0.08, icon:"https://cdn.dummyjson.com/products/images/laptops/Lenovo%20Yoga%20920/thumbnail.png"},
+                {name:"Dell XPS 13", value:350, chance:0.20, icon:"https://cdn.dummyjson.com/products/images/laptops/Dell%20XPS%2013%209370/thumbnail.png"},
+                {name:"Mouse Pad", value:10, chance:0.685, icon:"https://cdn.dummyjson.com/products/images/mobile-accessories/Apple%20MagSafe%20Battery%20Pack/thumbnail.png"} // Filler
+            ]
+        },
+
+        // --- HIGH RISK / JACKPOT CASES ---
+        {
+            id: 6, name: "Crypto Whale", cost: 500.00,
+            image: "https://cdn.dummyjson.com/products/images/mens-watches/Rolex%20Cellini%20Moonphase/thumbnail.png",
+            items: [
+                {name:"Rolex Cellini", value:15000, chance:0.002, icon:"https://cdn.dummyjson.com/products/images/mens-watches/Rolex%20Cellini%20Moonphase/thumbnail.png"}, // 0.2% Win
+                {name:"Rolex Submariner", value:8500, chance:0.01, icon:"https://cdn.dummyjson.com/products/images/mens-watches/Rolex%20Submariner%20Watch/thumbnail.png"},
+                {name:"Tag Heuer Monaco", value:3500, chance:0.03, icon:"https://cdn.dummyjson.com/products/images/mens-watches/Rolex%20Datejust/thumbnail.png"},
+                {name:"Citizen Eco-Drive", value:300, chance:0.20, icon:"https://cdn.dummyjson.com/products/images/mens-watches/Brown%20Perfume/thumbnail.png"},
+                {name:"Leather Strap", value:50, chance:0.758, icon:"https://cdn.dummyjson.com/products/images/mens-shoes/Formal%20Shoe/thumbnail.png"} // Heavy Loss
+            ]
+        },
+        {
+            id: 7, name: "Estate Sale", cost: 250.00,
+            image: "https://cdn.dummyjson.com/products/images/furniture/Knoll%20Saarinen%20Executive%20Conference%20Chair/thumbnail.png",
+            items: [
+                {name:"Conference Chair", value:2500, chance:0.005, icon:"https://cdn.dummyjson.com/products/images/furniture/Knoll%20Saarinen%20Executive%20Conference%20Chair/thumbnail.png"},
+                {name:"Wooden Bathroom Sink", value:900, chance:0.05, icon:"https://cdn.dummyjson.com/products/images/furniture/Wooden%20Bathroom%20Sink%20With%20Mirror/thumbnail.png"},
+                {name:"Bedside Table", value:350, chance:0.20, icon:"https://cdn.dummyjson.com/products/images/furniture/Bedside%20Table%20African%20Cherry/thumbnail.png"},
+                {name:"Annibale Colombo Bed", value:150, chance:0.30, icon:"https://cdn.dummyjson.com/products/images/furniture/Annibale%20Colombo%20Bed/thumbnail.png"},
+                {name:"Door Knob", value:20, chance:0.445, icon:"https://cdn.dummyjson.com/products/images/furniture/Mornadi%20Velvet%20Bed/thumbnail.png"} // Filler
+            ]
+        },
+        {
+            id: 8, name: "Apple Vault", cost: 150.00,
+            image: "https://cdn.dummyjson.com/products/images/laptops/Apple%20MacBook%20Pro%2014%20Inch%20Space%20Grey/thumbnail.png",
+            items: [
+                {name:"MacBook Pro 14", value:2200, chance:0.005, icon:"https://cdn.dummyjson.com/products/images/laptops/Apple%20MacBook%20Pro%2014%20Inch%20Space%20Grey/thumbnail.png"},
+                {name:"iPhone X", value:900, chance:0.04, icon:"https://cdn.dummyjson.com/products/images/smartphones/iPhone%20X/thumbnail.png"},
+                {name:"iPhone 6", value:350, chance:0.15, icon:"https://cdn.dummyjson.com/products/images/smartphones/iPhone%206/thumbnail.png"},
+                {name:"MagSafe Battery", value:80, chance:0.35, icon:"https://cdn.dummyjson.com/products/images/mobile-accessories/Apple%20MagSafe%20Battery%20Pack/thumbnail.png"},
+                {name:"Charging Cable", value:25, chance:0.455, icon:"https://cdn.dummyjson.com/products/images/mobile-accessories/Apple%20AirPods%20Max%20Silver/thumbnail.png"} // Filler
+            ]
+        },
+
+        // --- SPECIALTY ---
+        {
+            id: 9, name: "Beauty Bag", cost: 35.00,
+            image: "https://cdn.dummyjson.com/products/images/beauty/Rouge%20Allure%20Velvet/thumbnail.png",
+            items: [
+                {name:"Chanel Coco Noir", value:150, chance:0.02, icon:"https://cdn.dummyjson.com/products/images/fragrances/Chanel%20Coco%20Noir%20Eau%20De/thumbnail.png"},
+                {name:"Rouge Velvet", value:60, chance:0.10, icon:"https://cdn.dummyjson.com/products/images/beauty/Rouge%20Allure%20Velvet/thumbnail.png"},
+                {name:"Powder Canister", value:30, chance:0.30, icon:"https://cdn.dummyjson.com/products/images/beauty/Powder%20Canister/thumbnail.png"},
+                {name:"Eyeshadow Palette", value:20, chance:0.40, icon:"https://cdn.dummyjson.com/products/images/beauty/Eyeshadow%20Palette%20with%20Mirror/thumbnail.png"},
+                {name:"Lipstick", value:10, chance:0.18, icon:"https://cdn.dummyjson.com/products/images/beauty/Essence%20Mascara%20Lash%20Princess/thumbnail.png"}
+            ]
+        },
+        {
+            id: 10, name: "Motorcycle Club", cost: 200.00,
+            image: "https://cdn.dummyjson.com/products/images/motorcycle/Generic%20Motorcycle/thumbnail.png",
+            items: [
+                {name:"Generic Bike", value:3500, chance:0.003, icon:"https://cdn.dummyjson.com/products/images/motorcycle/Generic%20Motorcycle/thumbnail.png"}, // Jackpot
+                {name:"Kawasaki Ninja", value:2800, chance:0.007, icon:"https://cdn.dummyjson.com/products/images/motorcycle/Kawasaki%20Ninja%20400/thumbnail.png"},
+                {name:"Royal Enfield", value:1500, chance:0.02, icon:"https://cdn.dummyjson.com/products/images/motorcycle/Royal%20Enfield%20Meteor%20350/thumbnail.png"},
+                {name:"Scooter", value:800, chance:0.05, icon:"https://cdn.dummyjson.com/products/images/motorcycle/Scooter%20Motorcycle/thumbnail.png"},
+                {name:"Key Chain", value:5, chance:0.92, icon:"https://cdn.dummyjson.com/products/images/vehicle/300%20Touring/thumbnail.png"} // Huge Loss
+            ]
+        },
+        {
+            id: 11, name: "Mystery Box", cost: 50.00,
+            image: "https://cdn.dummyjson.com/products/images/mobile-accessories/Selfie%20Stick%20Monopod/thumbnail.png",
+            items: [
+                {name:"Microsoft Surface", value:1200, chance:0.005, icon:"https://cdn.dummyjson.com/products/images/laptops/Microsoft%20Surface%20Laptop%204/thumbnail.png"},
+                {name:"Oppo F19", value:250, chance:0.04, icon:"https://cdn.dummyjson.com/products/images/smartphones/Oppo%20F19/thumbnail.png"},
+                {name:"Tree Oil", value:45, chance:0.20, icon:"https://cdn.dummyjson.com/products/images/beauty/Tea%20Tree%20Oil%2030ml/thumbnail.png"},
+                {name:"Handbag", value:35, chance:0.30, icon:"https://cdn.dummyjson.com/products/images/womens-bags/Hessian%20Nichole%20Tote/thumbnail.png"},
+                {name:"Selfie Stick", value:10, chance:0.455, icon:"https://cdn.dummyjson.com/products/images/mobile-accessories/Selfie%20Stick%20Monopod/thumbnail.png"}
             ]
         }
     ];
@@ -665,7 +742,7 @@
             el.className = 'case-select-item';
             el.onclick = () => { addToBattleQueue(c); modal.classList.add('hidden'); };
             el.innerHTML = `
-                <img src="${c.image}" alt="${c.name}" referrerpolicy="no-referrer">
+                <img src="${c.image}" alt="${c.name}" referrerpolicy="no-referrer" onerror="this.src='https://placehold.co/100x100?text=Item'">
                 <div style="font-weight:bold; margin-top:5px;">${c.name}</div>
                 <div style="color:#e94560;">$${c.cost.toFixed(2)}</div>
             `;
@@ -720,7 +797,7 @@
             thumb.onclick = () => removeCaseFromQueue(index);
             thumb.innerHTML = `
                 <div class="remove-case-btn">✕</div>
-                <img src="${c.image}" alt="case" referrerpolicy="no-referrer">
+                <img src="${c.image}" alt="case" referrerpolicy="no-referrer" onerror="this.src='https://placehold.co/100x100?text=Item'">
                 <div>${c.name}</div>
                 <div style="color:#fff; font-weight:bold">$${c.cost}</div>
             `;
@@ -949,8 +1026,6 @@
         document.getElementById('btn-battle-exit').classList.remove('hidden');
     }
 
-    // ... [Rest of DOM/Animation helpers same as before] ...
-    
     // --- REEL DOM HELPERS ---
     function createVerticalReelDOM(c, resultItem, id) {
         const vp = document.createElement('div'); vp.className = 'viewport-vertical';
@@ -958,9 +1033,9 @@
         const winningIndex = 30;
         for(let i=0; i<45; i++) {
             let item = (i === winningIndex) ? resultItem : c.items[Math.floor(Math.random() * c.items.length)];
-            const rarity = getRarityClass(item.value, c.cost);
+            const rarity = getRarityClass(item.chance);
             const el = document.createElement('div'); el.className = `item-vertical ${rarity}`;
-            el.innerHTML = `<img src="${item.icon}" class="skin-img" referrerpolicy="no-referrer"><div class="spinner-text-v">${item.name.split(' | ')[1]}</div>`;
+            el.innerHTML = `<img src="${item.icon}" class="skin-img" referrerpolicy="no-referrer" onerror="this.src='https://placehold.co/100x100?text=Item'"><div class="spinner-text-v">${item.name}</div>`;
             reel.appendChild(el);
         }
         vp.innerHTML = `<div class="pointer-vertical"></div>`; vp.appendChild(reel);
@@ -998,7 +1073,7 @@
         const listContainer = document.getElementById('cases-list'); listContainer.innerHTML = '';
         casesDB.forEach(c => {
             const el = document.createElement('div'); el.className = 'battle-select-card'; el.onclick = () => selectCase(c.id);
-            el.innerHTML = `<img src="${c.image}" referrerpolicy="no-referrer"><div>${c.name}</div><div style="color:#e94560; font-weight:bold">$${c.cost.toFixed(2)} Coins</div>`;
+            el.innerHTML = `<img src="${c.image}" referrerpolicy="no-referrer" onerror="this.src='https://placehold.co/100x100?text=Item'"><div>${c.name}</div><div style="color:#e94560; font-weight:bold">$${c.cost.toFixed(2)} Coins</div>`;
             listContainer.appendChild(el);
         });
     }
@@ -1013,7 +1088,8 @@
         
         const listDiv = document.getElementById('case-contents-display'); listDiv.innerHTML = '';
         currentCase.items.forEach(item => {
-            const rarity = getRarityClass(item.value, currentCase.cost);
+            // NEW: Use chance for rarity color
+            const rarity = getRarityClass(item.chance);
             // Calculate % string
             const pctVal = item.chance * 100;
             const pctStr = pctVal < 1 ? pctVal.toFixed(2) : pctVal.toFixed(0);
@@ -1021,7 +1097,7 @@
             const card = document.createElement('div'); 
             card.className = `item-card ${rarity}`;
             card.innerHTML = `
-                <img src="${item.icon}" referrerpolicy="no-referrer">
+                <img src="${item.icon}" referrerpolicy="no-referrer" onerror="this.src='https://placehold.co/100x100?text=Item'">
                 <div class="item-name">${item.name}</div>
                 <div class="item-meta">
                     <span class="item-price">$${item.value.toFixed(2)}</span>
@@ -1068,16 +1144,19 @@
             const winningIndex = 45; 
             for (let i = 0; i < 60; i++) {
                 let itemData = (i === winningIndex) ? wonItem : currentCase.items[Math.floor(Math.random() * currentCase.items.length)];
-                const rarity = getRarityClass(itemData.value, currentCase.cost);
+                
+                // NEW: Use chance for rarity color
+                const rarity = getRarityClass(itemData.chance);
+                
                 const el = document.createElement('div');
-                const shortName = itemData.name.split(' | ')[1] || itemData.name;
+                const shortName = itemData.name;
                 
                 if(openCount === 1) { 
                     el.className = `item-horizontal ${rarity}`; 
-                    el.innerHTML = `<img src="${itemData.icon}" class="skin-img" referrerpolicy="no-referrer"><span class="spinner-text-h">${shortName}</span>`; 
+                    el.innerHTML = `<img src="${itemData.icon}" class="skin-img" referrerpolicy="no-referrer" onerror="this.src='https://placehold.co/100x100?text=Item'"><span class="spinner-text-h">${shortName}</span>`; 
                 } else { 
                     el.className = `item-vertical ${rarity}`; el.style.height = '80px'; 
-                    el.innerHTML = `<img src="${itemData.icon}" class="skin-img" style="width:60px;" referrerpolicy="no-referrer"><span class="spinner-text-h" style="font-size:0.7rem">${shortName}</span>`; 
+                    el.innerHTML = `<img src="${itemData.icon}" class="skin-img" style="width:60px;" referrerpolicy="no-referrer" onerror="this.src='https://placehold.co/100x100?text=Item'"><span class="spinner-text-h" style="font-size:0.7rem">${shortName}</span>`; 
                 }
                 reel.appendChild(el);
             }
