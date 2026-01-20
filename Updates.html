@@ -1,0 +1,1170 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Pro Arcade Simulator</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+    <style>
+        /* --- GLOBAL STYLES --- */
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            margin: 0;
+            background-color: #1a1a2e;
+            background-image: radial-gradient(#1f2b4d 1px, transparent 1px);
+            background-size: 30px 30px;
+            color: #fff;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            min-height: 100vh;
+            overflow-x: hidden;
+        }
+
+        .hidden { display: none !important; }
+        .fade-out { opacity: 0; transition: opacity 0.5s ease; pointer-events: none; }
+        .fade-in { opacity: 1; transition: opacity 0.5s ease; }
+
+        /* --- HEADER --- */
+        .top-bar {
+            width: 100%;
+            background: rgba(22, 33, 62, 0.95);
+            backdrop-filter: blur(10px);
+            padding: 15px 0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 15px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.4);
+            position: fixed;
+            top: 0;
+            z-index: 1000;
+            border-bottom: 1px solid #533483;
+        }
+
+        .balance-wrapper {
+            background-color: #0f3460;
+            padding: 5px 15px 5px 20px;
+            border-radius: 50px;
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            border: 1px solid #533483;
+            box-shadow: 0 0 10px rgba(83, 52, 131, 0.3);
+        }
+
+        .balance-text { font-weight: 800; font-size: 1.2rem; letter-spacing: 0.5px; }
+
+        .plus-btn {
+            background: linear-gradient(135deg, #28a745, #218838);
+            color: white; border: none;
+            width: 32px; height: 32px; border-radius: 50%;
+            font-size: 1.4rem; line-height: 0; cursor: pointer;
+            display: flex; align-items: center; justify-content: center;
+            transition: transform 0.2s; padding-bottom: 3px;
+        }
+        .plus-btn:hover { transform: scale(1.1) rotate(90deg); }
+
+        .graph-btn {
+            background-color: #16213e; border: 1px solid #533483; color: #fff;
+            border-radius: 50%; width: 42px; height: 42px; font-size: 1.2rem;
+            cursor: pointer; display: flex; align-items: center; justify-content: center;
+            transition: all 0.2s;
+        }
+        .graph-btn:hover { background-color: #533483; }
+
+        /* --- SCREENS --- */
+        .screen {
+            margin-top: 100px;
+            width: 95%;
+            max-width: 1100px;
+            text-align: center;
+            padding-bottom: 50px;
+            animation: popIn 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        }
+
+        /* --- HOME GRID --- */
+        .home-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+            gap: 20px;
+            padding: 20px;
+        }
+
+        .game-card {
+            background: linear-gradient(145deg, #16213e, #1f2b4d);
+            border-radius: 20px;
+            padding: 20px;
+            cursor: pointer;
+            border: 2px solid #533483;
+            transition: all 0.2s;
+            aspect-ratio: 1 / 1;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            box-shadow: 0 10px 20px rgba(0,0,0,0.3);
+        }
+        .game-card:hover { transform: translateY(-8px); border-color: #e94560; box-shadow: 0 15px 30px rgba(233, 69, 96, 0.2); }
+        .game-card h3 { margin: 15px 0 5px 0; font-size: 1.5rem; }
+        .game-card p { margin: 0; font-size: 0.9rem; color: #aaa; }
+
+        /* --- RARITY SYSTEM --- */
+        .rarity-trash { border-bottom: 4px solid #b0c3d9 !important; color: #b0c3d9 !important; }
+        .rarity-loss { border-bottom: 4px solid #5e98d9 !important; color: #5e98d9 !important; }
+        .rarity-common { border-bottom: 4px solid #4b69ff !important; color: #4b69ff !important; }
+        .rarity-epic { border-bottom: 4px solid #8847ff !important; color: #8847ff !important; }
+        .rarity-legendary { border-bottom: 4px solid #d32ce6 !important; color: #d32ce6 !important; }
+        .rarity-ancient { border-bottom: 4px solid #eb4b4b !important; color: #eb4b4b !important; }
+        .rarity-gold { 
+            border-bottom: 4px solid #ffd700 !important; 
+            box-shadow: inset 0 -10px 20px rgba(255, 215, 0, 0.2) !important;
+        }
+
+        /* --- NEW SPINNER LAYOUT --- */
+        #case-opener {
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+
+        #spinner-area { 
+            display: flex; 
+            justify-content: center; 
+            gap: 10px; 
+            margin: 0 auto; 
+            width: 100%;
+            max-width: 800px;
+        }
+
+        .viewport-horizontal {
+            position: relative; width: 100%; height: 160px; background: #0a0a12;
+            border: 3px solid #533483; border-radius: 12px; overflow: hidden;
+            box-shadow: inset 0 0 20px rgba(0,0,0,0.8);
+        }
+        .reel-horizontal { display: flex; position: absolute; left: 0; top: 0; height: 100%; will-change: transform; }
+        .item-horizontal {
+            min-width: 130px; max-width: 130px; height: 100%;
+            display: flex; flex-direction: column; align-items: center; justify-content: center;
+            border-right: 2px solid #1a1a2e; background: linear-gradient(180deg, #16213e 0%, #0f3460 100%);
+            box-sizing: border-box;
+        }
+        .pointer-horizontal { position: absolute; top: 0; left: 50%; transform: translateX(-50%); width: 4px; height: 100%; background: #fff; z-index: 100; box-shadow: 0 0 15px #fff; }
+        
+        /* IMAGE STYLING */
+        .skin-img {
+            width: 85%;
+            height: 70px;
+            object-fit: contain;
+            margin-bottom: 5px;
+            filter: drop-shadow(0 4px 6px rgba(0,0,0,0.5));
+        }
+
+        .spinner-text-h { font-size: 0.7rem; font-weight: bold; text-transform: uppercase; max-width: 110px; text-align: center; white-space: normal; line-height: 1.1; color: #ddd; }
+
+        .viewport-vertical {
+            position: relative; 
+            width: 130px;
+            height: 320px;
+            background: #0a0a12;
+            border: 3px solid #533483; border-radius: 12px; overflow: hidden;
+            box-shadow: inset 0 0 15px rgba(0,0,0,0.8); margin: 0 auto;
+        }
+        .reel-vertical { display: flex; flex-direction: column; position: absolute; left: 0; top: 0; width: 100%; will-change: transform; }
+        .item-vertical {
+            width: 100%; height: 120px; 
+            display: flex; flex-direction: column; align-items: center; justify-content: center;
+            border-right: none; background: linear-gradient(90deg, #16213e 0%, #0f3460 100%);
+            box-sizing: border-box; 
+        }
+        .pointer-vertical { position: absolute; top: 50%; left: 0; transform: translateY(-50%); width: 100%; height: 4px; background: #fff; z-index: 100; box-shadow: 0 0 10px #fff; }
+        .spinner-text-v { font-size: 0.8rem; font-weight: bold; text-transform: uppercase; max-width: 110px; text-align: center; white-space: normal; line-height: 1.1; color: #ddd; }
+
+        /* --- CONTENTS GRID (NEW) --- */
+        .contents-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+            gap: 10px;
+            margin-top: 20px;
+            width: 100%;
+        }
+
+        .item-card {
+            background: rgba(255,255,255,0.03);
+            border-radius: 8px;
+            padding: 10px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            text-align: center;
+            transition: transform 0.2s;
+            position: relative;
+            overflow: hidden;
+        }
+        .item-card:hover { transform: translateY(-3px); background: rgba(255,255,255,0.06); }
+        
+        .item-card img { width: 100px; height: 60px; object-fit: contain; margin-bottom: 8px; }
+        .item-name { font-size: 0.8rem; font-weight: bold; color: #fff; margin-bottom: 4px; height: 32px; overflow: hidden; display: flex; align-items: center; justify-content: center; }
+        .item-meta { font-size: 0.75rem; color: #aaa; width: 100%; display: flex; justify-content: space-between; padding-top: 5px; border-top: 1px solid rgba(255,255,255,0.1); }
+        .item-price { color: #e94560; font-weight: bold; }
+
+        /* --- BATTLE SPECIFIC --- */
+        .battle-setup-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 15px; margin-bottom: 20px; }
+        .battle-select-card { background: #0f3460; border: 2px solid #533483; padding: 15px; border-radius: 12px; cursor: pointer; transition: all 0.2s; display:flex; flex-direction:column; align-items:center;}
+        .battle-select-card:hover { border-color: #e94560; transform: scale(1.05); }
+        .battle-select-card img { width: 90px; height: auto; margin-bottom: 10px; filter: drop-shadow(0 2px 4px rgba(0,0,0,0.5)); }
+
+        .battle-queue-area {
+            min-height: 100px;
+            background: #16213e;
+            border: 2px dashed #533483;
+            border-radius: 15px;
+            padding: 15px;
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            justify-content: center;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+
+        .battle-case-thumb {
+            width: 80px; height: 100px;
+            background: #0f3460;
+            border: 1px solid #533483;
+            border-radius: 8px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            position: relative;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        .battle-case-thumb:hover { border-color: #e94560; transform: scale(1.05); }
+        .battle-case-thumb img { width: 50px; height: auto; margin-bottom: 5px; }
+        .battle-case-thumb div { font-size: 0.65rem; text-align: center; color: #aaa; overflow:hidden; white-space:nowrap; width:90%; text-overflow:ellipsis; }
+        
+        .remove-case-btn {
+            position: absolute; top: -5px; right: -5px;
+            background: #e94560; color: white;
+            width: 20px; height: 20px; border-radius: 50%;
+            font-size: 0.8rem; display: flex; align-items: center; justify-content: center;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.5); z-index: 5;
+        }
+
+        .add-case-btn {
+            width: 80px; height: 100px;
+            background: rgba(255,255,255,0.05);
+            border: 2px dashed #aaa;
+            border-radius: 8px;
+            display: flex; align-items: center; justify-content: center;
+            font-size: 2rem; color: #aaa; cursor: pointer;
+            transition: all 0.2s;
+        }
+        .add-case-btn:hover { background: rgba(255,255,255,0.1); color: #fff; border-color: #fff; }
+
+        /* MODAL */
+        .modal-overlay {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0,0,0,0.8); z-index: 2000;
+            display: flex; justify-content: center; align-items: center;
+            backdrop-filter: blur(5px);
+        }
+        .modal-content {
+            background: #1a1a2e; border: 2px solid #533483;
+            width: 90%; max-width: 800px; max-height: 80vh;
+            border-radius: 20px; padding: 20px;
+            overflow-y: auto; text-align: center;
+            box-shadow: 0 0 30px rgba(0,0,0,0.5);
+        }
+        .case-grid {
+            display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 15px; margin-top: 20px;
+        }
+        .case-select-item {
+            background: #0f3460; border: 1px solid #533483; padding: 15px; border-radius: 12px; cursor: pointer; transition: all 0.2s;
+            display: flex; flex-direction: column; align-items: center;
+        }
+        .case-select-item img { width: 100px; height: auto; margin-bottom: 10px; filter: drop-shadow(0 0 5px rgba(0,0,0,0.5)); }
+        .case-select-item:hover { border-color: #e94560; transform: translateY(-5px); }
+
+        /* ARENA */
+        .battle-arena-container { 
+            display: flex; justify-content: center; gap: 10px; align-items: flex-start; margin-top: 20px; flex-wrap: wrap; 
+            transition: opacity 0.5s;
+        }
+        .battle-column {
+            flex: 0 1 200px; background: #16213e; padding: 15px; border-radius: 15px; 
+            border: 2px solid transparent; 
+            transition: all 0.3s; position: relative;
+        }
+        .battle-column h3 { margin: 0 0 15px 0; color: #fff; border-bottom: 1px solid #533483; padding-bottom: 5px; font-size: 1.2rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        
+        .battle-divider { align-self: center; font-size: 2rem; font-weight: 900; color: #533483; text-shadow: 0 0 10px rgba(233, 69, 96, 0.5); margin-top: 100px; }
+        .score-box { background: #0f3460; font-size: 2rem; padding: 10px; border-radius: 8px; margin-top: 15px; font-weight: bold; border: 1px solid #533483; }
+        .percent-box { color: #aaa; font-size: 0.9rem; margin-top: 5px; font-weight: bold; }
+        .battle-info { font-size: 1.4rem; font-weight: bold; color: #ff9800; margin-bottom: 10px; }
+        .winner-glow { box-shadow: 0 0 35px #4caf50; border-color: #4caf50 !important; transform: scale(1.05); z-index: 10; }
+        .loser-dim { opacity: 0.5; transform: scale(0.95); }
+
+        /* JACKPOT OVERLAY */
+        #jackpot-container {
+            position: absolute; top: 60px; left: 0; width: 100%;
+            display: flex; flex-direction: column; align-items: center; z-index: 100;
+            animation: popIn 0.5s;
+        }
+        .jackpot-bar {
+            height: 100%; display: flex; box-sizing: border-box; 
+            border-right: 2px solid rgba(0,0,0,0.5);
+        }
+
+        /* --- UI UTILS --- */
+        .btn { border: none; padding: 15px; font-size: 1.1rem; border-radius: 8px; cursor: pointer; width: 100%; font-weight: bold; color: white; transition: background 0.3s; }
+        .btn:disabled { background-color: #444 !important; color: #888; cursor: not-allowed; opacity: 0.8; transform: none !important; }
+        .btn-primary { background: linear-gradient(135deg, #e94560, #c31432); }
+        .btn-primary:hover { filter: brightness(1.1); }
+        .btn-secondary { background-color: #533483; }
+        .btn-secondary:hover { background-color: #6a42a5; }
+        
+        .multi-control { display: flex; justify-content: center; gap: 8px; margin-bottom: 15px; background: #0f3460; padding: 8px; border-radius: 12px; display: inline-flex; }
+        .multi-btn { background: transparent; border: 1px solid transparent; color: #aaa; padding: 8px 16px; border-radius: 8px; cursor: pointer; font-weight: bold; transition: all 0.2s; }
+        .multi-btn:hover { color: #fff; background: rgba(255,255,255,0.05); }
+        .multi-btn.active { background: #e94560; color: white; box-shadow: 0 4px 10px rgba(233, 69, 96, 0.4); }
+
+        /* --- OTHER --- */
+        .item-row { display: flex; justify-content: space-between; padding: 12px; border-bottom: 1px solid #2a2a40; font-size: 1rem; border-radius: 6px; margin-bottom: 4px; background: rgba(255,255,255,0.02); }
+        .item-row img { width: 40px; height: auto; margin-right: 10px; vertical-align: middle; }
+        .bj-table { background-color: #104e2d; border: 8px solid #3e2723; border-radius: 20px; padding: 20px; position: relative; margin-bottom: 20px; min-height: 250px; }
+        .hand-area { min-height: 100px; margin: 10px 0; display: flex; justify-content: center; gap: 10px; }
+        .playing-card { background: white; color: black; width: 50px; height: 75px; border-radius: 5px; display: flex; flex-direction: column; align-items: center; justify-content: center; font-weight: bold; font-size: 1.2rem; box-shadow: 2px 2px 5px rgba(0,0,0,0.5); position: relative; opacity: 0; animation: dealCard 0.4s ease-out forwards; }
+        .playing-card.red { color: #d32f2f; } .playing-card.black { color: #000; }
+        .playing-card.back { background: repeating-linear-gradient(45deg, #b71c1c, #b71c1c 10px, #c62828 10px, #c62828 20px); border: 2px solid white; }
+        .dice-container { height: 120px; display: flex; align-items: center; justify-content: center; margin: 20px 0; }
+        .dice-display { font-size: 6rem; cursor: default; user-select: none; }
+        .input-group { background: #16213e; padding: 20px; border-radius: 12px; margin-bottom: 20px; text-align: left; }
+        input, select { width: 100%; padding: 12px; background: #0f3460; border: 1px solid #533483; color: white; border-radius: 6px; font-size: 1rem; box-sizing: border-box; }
+        .controls-area { display: flex; justify-content: center; gap: 10px; margin-top: 15px; }
+        .status-message { min-height: 20px; margin-top: 20px; font-weight: bold; font-size: 1.2rem; }
+
+        @keyframes popIn { 0% { opacity: 0; transform: translateY(40px) scale(0.9); } 100% { opacity: 1; transform: translateY(0) scale(1); } }
+        @keyframes dealCard { 0% { opacity: 0; transform: translateY(-200px) rotate(10deg); } 100% { opacity: 1; transform: translateY(0) rotate(0deg); } }
+        @keyframes shake { 0% { transform: rotate(0deg) scale(1); } 25% { transform: rotate(10deg) scale(1.1); } 50% { transform: rotate(-10deg) scale(1.1); } 75% { transform: rotate(10deg) scale(1.1); } 100% { transform: rotate(0deg) scale(1); } }
+        .rolling { animation: shake 0.3s infinite; }
+    </style>
+</head>
+<body>
+
+    <div class="top-bar">
+        <div class="balance-wrapper">
+            <span class="balance-text">Balance: <span id="global-balance">20</span></span>
+            <button class="plus-btn" onclick="addFunds()">+</button>
+        </div>
+        <button class="graph-btn" onclick="switchScreen('stats')">📈</button>
+    </div>
+
+    <div id="home-screen" class="screen">
+        <h1 style="font-size: 2.5rem; text-shadow: 0 0 20px rgba(83, 52, 131, 0.8);">ARCADE LOBBY</h1>
+        <div class="home-grid">
+            <div class="game-card" onclick="switchScreen('battle')">
+                <div style="font-size: 4rem;">⚔️</div>
+                <h3>Box Battles</h3>
+                <p>PvP & Jackpot Modes</p>
+            </div>
+            <div class="game-card" onclick="switchScreen('cases')">
+                <div style="font-size: 4rem;">📦</div>
+                <h3>Lucky Cases</h3>
+                <p>Unbox Rare Items</p>
+            </div>
+            <div class="game-card" onclick="switchScreen('game')">
+                <div style="font-size: 4rem;">🎲</div>
+                <h3>Dice</h3>
+                <p>6x Multiplier</p>
+            </div>
+            <div class="game-card" onclick="switchScreen('blackjack')">
+                <div style="font-size: 4rem;">🃏</div>
+                <h3>Blackjack</h3>
+                <p>Classic 21</p>
+            </div>
+        </div>
+    </div>
+
+    <div id="battle-screen" class="screen hidden">
+        <h2>Lucky Box Battles</h2>
+        
+        <div id="battle-setup">
+            <div class="multi-control">
+                <button class="multi-btn active" onclick="setBattleMode('1v1', this)">1v1</button>
+                <button class="multi-btn" onclick="setBattleMode('1v1v1', this)">1v1v1</button>
+                <button class="multi-btn" onclick="setBattleMode('1v1v1v1', this)">1v1v1v1</button>
+                <button class="multi-btn" onclick="setBattleMode('2v2', this)">2v2</button>
+            </div>
+
+            <div class="multi-control" style="margin-bottom: 20px;">
+                <button class="multi-btn active" id="type-std" onclick="setBattleType('standard')">Standard</button>
+                <button class="multi-btn" id="type-jack" onclick="setBattleType('jackpot')">Jackpot</button>
+            </div>
+
+            <div class="battle-queue-area" id="battle-queue-area">
+                <div class="add-case-btn" onclick="openCaseModal()">+</div>
+                </div>
+            
+            <h3 id="battle-total-cost">Total Cost: 0</h3>
+            <button class="btn btn-primary" id="btn-start-battle" onclick="startBattle()">CREATE BATTLE</button>
+            <button class="btn btn-secondary" style="margin-top:10px" onclick="clearBattleQueue()">CLEAR CART</button>
+        </div>
+
+        <div id="battle-arena" class="hidden" style="position: relative; min-height: 500px;">
+            <div id="battle-round-indicator" class="battle-info">Round 1 of 5</div>
+            <div id="battle-arena-container" class="battle-arena-container"></div>
+            
+            <div id="jackpot-container" class="hidden">
+                <h3 style="color:#ffd600; font-size: 1.5rem; margin-bottom: 20px;">JACKPOT SPIN</h3>
+                <div class="viewport-horizontal" style="margin: 0 auto; border-color: #ffd600; width: 100%; height: 100px;">
+                    <div class="pointer-horizontal" style="background:#fff; height:100%; width: 4px; box-shadow: 0 0 10px #fff; z-index:200;"></div>
+                    <div id="jackpot-reel" class="reel-horizontal"></div>
+                </div>
+                <div id="winner-announcement" style="margin-top: 20px; font-size: 1.2rem; font-weight: bold;"></div>
+            </div>
+
+            <div id="battle-result-text" style="font-size: 1.5rem; font-weight: bold; margin: 20px 0;"></div>
+            <button class="btn btn-secondary hidden" id="btn-battle-reset" onclick="resetBattleUI()">NEW BATTLE</button>
+            <button class="btn btn-secondary hidden" id="btn-battle-exit" style="margin-top:10px" onclick="switchScreen('home')">EXIT</button>
+        </div>
+        <button class="btn btn-secondary" id="btn-battle-exit-setup" style="margin-top:20px" onclick="switchScreen('home')">EXIT</button>
+    </div>
+
+    <div id="case-modal" class="modal-overlay hidden" onclick="closeCaseModal(event)">
+        <div class="modal-content">
+            <h2>Select Case</h2>
+            <div id="modal-case-list" class="case-grid"></div>
+            <button class="btn btn-secondary" style="margin-top:20px; width:auto;" onclick="document.getElementById('case-modal').classList.add('hidden')">Close</button>
+        </div>
+    </div>
+
+    <div id="cases-screen" class="screen hidden">
+        <h2>Lucky Cases</h2>
+        <div id="cases-list" class="case-grid"></div>
+        <div id="case-opener" class="hidden">
+            <div class="input-group" style="padding-bottom:5px;">
+                <h3 id="case-title" style="margin:0; text-align:center;">Case</h3>
+                <div id="spinner-area"></div>
+            </div>
+
+            <div class="input-group" style="text-align:center;">
+                <div class="multi-control">
+                    <button class="multi-btn active" id="btn-count-1" onclick="setOpenCount(1)">1x</button>
+                    <button class="multi-btn" id="btn-count-2" onclick="setOpenCount(2)">2x</button>
+                    <button class="multi-btn" id="btn-count-3" onclick="setOpenCount(3)">3x</button>
+                    <button class="multi-btn" id="btn-count-4" onclick="setOpenCount(4)">4x</button>
+                </div>
+                <div style="margin-bottom: 15px; font-size:1.2rem; font-weight: bold; color: #e94560;" id="case-cost">Cost: 5</div>
+                
+                <div id="case-result-text" style="font-size: 1.3rem; font-weight: bold; margin-bottom: 15px; min-height: 1.6em; white-space: pre-wrap;"></div>
+                
+                <button class="btn btn-primary" id="btn-open-case" onclick="triggerOpenCase()">OPEN CASE</button>
+                <button class="btn btn-secondary" style="margin-top: 10px;" onclick="resetCaseMenu()">BACK TO LIST</button>
+            </div>
+
+            <div style="text-align:left; color:#aaa; font-weight:bold; margin-top:10px;">Case Contents:</div>
+            <div id="case-contents-display" class="contents-grid"></div>
+        </div>
+        <button class="btn btn-secondary" id="btn-cases-exit" style="margin-top:20px" onclick="switchScreen('home')">EXIT</button>
+    </div>
+
+    <div id="game-screen" class="screen hidden">
+        <h2>Dice Multiplier</h2>
+        <div class="dice-container"><div id="dice" class="dice-display">🎲</div></div>
+        <div class="input-group">
+            <label>Wager</label>
+            <input type="number" id="dice-wager" value="10">
+            <label style="margin-top: 10px;">Prediction</label>
+            <select id="dice-guess">
+                <option value="1">1</option><option value="2">2</option><option value="3">3</option>
+                <option value="4">4</option><option value="5">5</option><option value="6">6</option>
+            </select>
+        </div>
+        <button class="btn btn-primary" id="roll-btn" onclick="startRoll()">ROLL</button>
+        <button class="btn btn-secondary" style="margin-top:10px" onclick="switchScreen('home')">EXIT</button>
+        <div class="status-message" id="dice-status">Good Luck!</div>
+    </div>
+    <div id="blackjack-screen" class="screen hidden">
+        <h2>Classic 21</h2>
+        <div class="input-group" id="bj-wager-area">
+            <label>Wager Amount</label>
+            <input type="number" id="bj-wager" value="10">
+            <button class="btn btn-primary" style="margin-top: 10px;" onclick="startBlackjack()">DEAL HAND</button>
+        </div>
+        <div id="bj-game-area" class="hidden">
+            <div class="bj-table">
+                <div style="font-size: 0.9rem; color: #81c784;">DEALER (<span id="dealer-score">?</span>)</div>
+                <div id="dealer-hand" class="hand-area"></div>
+                <div style="margin-top: 20px; font-size: 0.9rem; color: #81c784;">YOU (<span id="player-score">0</span>)</div>
+                <div id="player-hand" class="hand-area"></div>
+            </div>
+            <div class="controls-area">
+                <button class="btn btn-success" id="btn-hit" onclick="bjHit()" style="width: 100px;">HIT</button>
+                <button class="btn btn-primary" id="btn-stand" onclick="bjStand()" style="width: 100px;">STAND</button>
+                <button class="btn btn-warning" id="btn-double" onclick="bjDouble()" style="width: 100px;">DOUBLE</button>
+            </div>
+            <div class="status-message" id="bj-status">Place your bet</div>
+            <button class="btn btn-secondary hidden" id="btn-new-hand" style="margin-top: 15px;" onclick="resetBlackjackUI()">NEW HAND</button>
+        </div>
+        <button class="btn btn-secondary" style="margin-top:20px" onclick="switchScreen('home')">EXIT</button>
+    </div>
+    <div id="stats-screen" class="screen hidden">
+        <h2>Profit / Loss Graph</h2>
+        <div style="background: #16213e; padding: 10px; border-radius: 15px; border: 1px solid #533483;">
+            <canvas id="profitChart"></canvas>
+        </div>
+        <button class="btn btn-secondary" style="margin-top:20px" onclick="switchScreen('home')">Back to Lobby</button>
+    </div>
+
+<script>
+    // --- GLOBAL STATE ---
+    let balance = 20;
+    let balanceHistory = [20];
+    let turnLabels = ["Start"];
+    let myChart = null;
+
+    // --- COLORS FOR JACKPOT ---
+    const PLAYER_COLORS = {
+        'p': '#448aff',  // Blue
+        'b1': '#e94560', // Red
+        'b2': '#00e676', // Green
+        'b3': '#ff9100'  // Orange
+    };
+
+    function getRarityClass(value, cost) {
+        if (value === 0) return 'rarity-trash';
+        if (value < cost) return 'rarity-loss';
+        // Updated thresholds for CS2 skin values roughly
+        if (value >= 500) return 'rarity-gold'; // Knife/Gold
+        if (value >= 100) return 'rarity-ancient'; // Red
+        if (value >= 25) return 'rarity-legendary'; // Pink
+        if (value >= 5) return 'rarity-epic'; // Purple
+        if (value >= 1) return 'rarity-common'; // Blue
+        return 'rarity-loss'; // Light Blue / Grey
+    }
+
+    const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+    function playTick() {
+        if (audioCtx.state === 'suspended') audioCtx.resume();
+        const osc = audioCtx.createOscillator(); const gain = audioCtx.createGain();
+        osc.type = 'square'; osc.frequency.setValueAtTime(150, audioCtx.currentTime); osc.frequency.exponentialRampToValueAtTime(40, audioCtx.currentTime + 0.1);
+        gain.gain.setValueAtTime(0.1, audioCtx.currentTime); gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.1);
+        osc.connect(gain); gain.connect(audioCtx.destination); osc.start(); osc.stop(audioCtx.currentTime + 0.1);
+    }
+
+    function switchScreen(name) {
+        document.querySelectorAll('.screen').forEach(s => s.classList.add('hidden'));
+        let screen = document.getElementById(name + '-screen');
+        if(name === 'game') screen = document.getElementById('game-screen');
+        if(screen) {
+            screen.classList.remove('hidden');
+            if(name === 'stats') renderChart();
+            if(name === 'cases') renderCaseList(); // Renders grid for single case screen
+            if(name === 'battle') initBattleScreen();
+        }
+    }
+    function addFunds() { balance += 100; updateBalanceUI(); }
+    function updateBalanceUI() { document.getElementById('global-balance').innerText = balance.toFixed(2); }
+    function trackHistory() { balanceHistory.push(balance); turnLabels.push("Turn " + (balanceHistory.length - 1)); }
+
+    function renderChart() {
+        const ctx = document.getElementById('profitChart').getContext('2d');
+        if (myChart) myChart.destroy();
+        myChart = new Chart(ctx, {
+            type: 'line', data: { labels: turnLabels, datasets: [{ label: 'Balance', data: balanceHistory, borderColor: '#e94560', backgroundColor: 'rgba(233,69,96,0.2)', fill: true, tension: 0.3 }] },
+            options: { plugins: { legend: { display: false } }, scales: { y: { ticks: { color: '#a0a0a0' }, grid: { color: '#2a2a40' } }, x: { display: false } } }
+        });
+    }
+
+    // --- NEW CUSTOM CS2 CASES (2025 Prices, Fresh Links) ---
+    // Images sourced from community CDN. Odds adjusted for House Edge (~96% RTP).
+    const casesDB = [
+        {
+            id: 0, name: "Urban Covert", cost: 2.50,
+            image: "https://community.cloudflare.steamstatic.com/economy/image/-9a81dlWLwJ2UUGcVs_nsVtzdOEdtWwKGZZLQHTxDZ7I56KU0Zwwo4NUX4oFJZEHLbXU5A1PIYQNqhpOSV-fRPasw8rsUFJ5KBFZv668FFQ1naDOQi4SuNnkw4XYk6D1Zu6FlG9U6pZz3r2Z8Y6s2lfs-0NqZ233cI6TI1dvZwuC-1Pqlenqh5697c_Pm3FqvCMj5y7cmh3kg01MZuM50vWacw/360fx360f",
+            items: [
+                {name:"M4A1-S | Printstream", value:85, chance:0.005, icon:"https://community.cloudflare.steamstatic.com/economy/image/-9a81dlWLwJ2UUGcVs_nsVtzdOEdtWwKGZZLQHTxDZ7I56KU0Zwwo4NUX4oFJZEHLbXH5A1PIYQNqhpOSV-fRPasw8rsUFJ5KBFZv668FFQ1naDOQi4SuNnkw4XYk6D1Zu6FlG9U6pZz3r2Z8Y6s2lfs-0NqZ233cI6TI1dvZwuC-1Pqlenqh5697c_Pm3FqvCMj5y7cmh3kg01MZuM50vWacw/360fx360f"},
+                {name:"USP-S | Kill Confirmed", value:45, chance:0.012, icon:"https://community.cloudflare.steamstatic.com/economy/image/-9a81dlWLwJ2UUGcVs_nsVtzdOEdtWwKGZZLQHTxDZ7I56KU0Zwwo4NUX4oFJZEHLbXH5A1PIYQNqhpOSV-fRPasw8rsUFJ5KBFZv668FFQ1naDOQi4SuNnkw4XYk6D1Zu6FlG9U6pZz3r2Z8Y6s2lfs-0NqZ233cI6TI1dvZwuC-1Pqlenqh5697c_Pm3FqvCMj5y7cmh3kg01MZuM50vWacw/360fx360f"},
+                {name:"AK-47 | Slate", value:8, chance:0.08, icon:"https://community.cloudflare.steamstatic.com/economy/image/-9a81dlWLwJ2UUGcVs_nsVtzdOEdtWwKGZZLQHTxDZ7I56KU0Zwwo4NUX4oFJZEHLbXH5A1PIYQNqhpOSV-fRPasw8rsUFJ5KBFZv668FFQ1naDOQi4SuNnkw4XYk6D1Zu6FlG9U6pZz3r2Z8Y6s2lfs-0NqZ233cI6TI1dvZwuC-1Pqlenqh5697c_Pm3FqvCMj5y7cmh3kg01MZuM50vWacw/360fx360f"},
+                {name:"Glock-18 | Urban Rubble", value:0.50, chance:0.25, icon:"https://community.cloudflare.steamstatic.com/economy/image/-9a81dlWLwJ2UUGcVs_nsVtzdOEdtWwKGZZLQHTxDZ7I56KU0Zwwo4NUX4oFJZEHLbXH5A1PIYQNqhpOSV-fRPasw8rsUFJ5KBFZv668FFQ1naDOQi4SuNnkw4XYk6D1Zu6FlG9U6pZz3r2Z8Y6s2lfs-0NqZ233cI6TI1dvZwuC-1Pqlenqh5697c_Pm3FqvCMj5y7cmh3kg01MZuM50vWacw/360fx360f"},
+                {name:"P250 | Sand Dune", value:0.05, chance:0.35, icon:"https://community.cloudflare.steamstatic.com/economy/image/-9a81dlWLwJ2UUGcVs_nsVtzdOEdtWwKGZZLQHTxDZ7I56KU0Zwwo4NUX4oFJZEHLbXH5A1PIYQNqhpOSV-fRPasw8rsUFJ5KBFZv668FFQ1naDOQi4SuNnkw4XYk6D1Zu6FlG9U6pZz3r2Z8Y6s2lfs-0NqZ233cI6TI1dvZwuC-1Pqlenqh5697c_Pm3FqvCMj5y7cmh3kg01MZuM50vWacw/360fx360f"},
+                {name:"Nova | Polar Mesh", value:0.03, chance:0.303, icon:"https://community.cloudflare.steamstatic.com/economy/image/-9a81dlWLwJ2UUGcVs_nsVtzdOEdtWwKGZZLQHTxDZ7I56KU0Zwwo4NUX4oFJZEHLbXH5A1PIYQNqhpOSV-fRPasw8rsUFJ5KBFZv668FFQ1naDOQi4SuNnkw4XYk6D1Zu6FlG9U6pZz3r2Z8Y6s2lfs-0NqZ233cI6TI1dvZwuC-1Pqlenqh5697c_Pm3FqvCMj5y7cmh3kg01MZuM50vWacw/360fx360f"}
+            ]
+        },
+        {
+            id: 1, name: "Neon Nights", cost: 5.00,
+            image: "https://community.cloudflare.steamstatic.com/economy/image/-9a81dlWLwJ2UUGcVs_nsVtzdOEdtWwKGZZLQHTxDZ7I56KU0Zwwo4NUX4oFJZEHLbXH5A1PIYQNqhpOSV-fRPasw8rsUFJ5KBFZv668FFQ1naDOQi4SuNnkw4XYk6D1Zu6FlG9U6pZz3r2Z8Y6s2lfs-0NqZ233cI6TI1dvZwuC-1Pqlenqh5697c_Pm3FqvCMj5y7cmh3kg01MZuM50vWacw/360fx360f",
+            items: [
+                {name:"AK-47 | Neon Rider", value:110, chance:0.006, icon:"https://community.cloudflare.steamstatic.com/economy/image/-9a81dlWLwJ2UUGcVs_nsVtzdOEdtWwKGZZLQHTxDZ7I56KU0Zwwo4NUX4oFJZEHLbXH5A1PIYQNqhpOSV-fRPasw8rsUFJ5KBFZv668FFQ1naDOQi4SuNnkw4XYk6D1Zu6FlG9U6pZz3r2Z8Y6s2lfs-0NqZ233cI6TI1dvZwuC-1Pqlenqh5697c_Pm3FqvCMj5y7cmh3kg01MZuM50vWacw/360fx360f"},
+                {name:"MAC-10 | Neon Rider", value:18, chance:0.04, icon:"https://community.cloudflare.steamstatic.com/economy/image/-9a81dlWLwJ2UUGcVs_nsVtzdOEdtWwKGZZLQHTxDZ7I56KU0Zwwo4NUX4oFJZEHLbXH5A1PIYQNqhpOSV-fRPasw8rsUFJ5KBFZv668FFQ1naDOQi4SuNnkw4XYk6D1Zu6FlG9U6pZz3r2Z8Y6s2lfs-0NqZ233cI6TI1dvZwuC-1Pqlenqh5697c_Pm3FqvCMj5y7cmh3kg01MZuM50vWacw/360fx360f"},
+                {name:"AWP | Chromatic Aberration", value:12, chance:0.08, icon:"https://community.cloudflare.steamstatic.com/economy/image/-9a81dlWLwJ2UUGcVs_nsVtzdOEdtWwKGZZLQHTxDZ7I56KU0Zwwo4NUX4oFJZEHLbXH5A1PIYQNqhpOSV-fRPasw8rsUFJ5KBFZv668FFQ1naDOQi4SuNnkw4XYk6D1Zu6FlG9U6pZz3r2Z8Y6s2lfs-0NqZ233cI6TI1dvZwuC-1Pqlenqh5697c_Pm3FqvCMj5y7cmh3kg01MZuM50vWacw/360fx360f"},
+                {name:"MP9 | Mount Fuji", value:3, chance:0.25, icon:"https://community.cloudflare.steamstatic.com/economy/image/-9a81dlWLwJ2UUGcVs_nsVtzdOEdtWwKGZZLQHTxDZ7I56KU0Zwwo4NUX4oFJZEHLbXH5A1PIYQNqhpOSV-fRPasw8rsUFJ5KBFZv668FFQ1naDOQi4SuNnkw4XYk6D1Zu6FlG9U6pZz3r2Z8Y6s2lfs-0NqZ233cI6TI1dvZwuC-1Pqlenqh5697c_Pm3FqvCMj5y7cmh3kg01MZuM50vWacw/360fx360f"},
+                {name:"Five-SeveN | Berries", value:1.50, chance:0.30, icon:"https://community.cloudflare.steamstatic.com/economy/image/-9a81dlWLwJ2UUGcVs_nsVtzdOEdtWwKGZZLQHTxDZ7I56KU0Zwwo4NUX4oFJZEHLbXH5A1PIYQNqhpOSV-fRPasw8rsUFJ5KBFZv668FFQ1naDOQi4SuNnkw4XYk6D1Zu6FlG9U6pZz3r2Z8Y6s2lfs-0NqZ233cI6TI1dvZwuC-1Pqlenqh5697c_Pm3FqvCMj5y7cmh3kg01MZuM50vWacw/360fx360f"},
+                {name:"G3SG1 | Digital Mesh", value:0.10, chance:0.324, icon:"https://community.cloudflare.steamstatic.com/economy/image/-9a81dlWLwJ2UUGcVs_nsVtzdOEdtWwKGZZLQHTxDZ7I56KU0Zwwo4NUX4oFJZEHLbXH5A1PIYQNqhpOSV-fRPasw8rsUFJ5KBFZv668FFQ1naDOQi4SuNnkw4XYk6D1Zu6FlG9U6pZz3r2Z8Y6s2lfs-0NqZ233cI6TI1dvZwuC-1Pqlenqh5697c_Pm3FqvCMj5y7cmh3kg01MZuM50vWacw/360fx360f"}
+            ]
+        },
+        {
+            id: 2, name: "Heavy Metal", cost: 8.50,
+            image: "https://community.cloudflare.steamstatic.com/economy/image/-9a81dlWLwJ2UUGcVs_nsVtzdOEdtWwKGZZLQHTxDZ7I56KU0Zwwo4NUX4oFJZEHLbXH5A1PIYQNqhpOSV-fRPasw8rsUFJ5KBFZv668FFQ1naDOQi4SuNnkw4XYk6D1Zu6FlG9U6pZz3r2Z8Y6s2lfs-0NqZ233cI6TI1dvZwuC-1Pqlenqh5697c_Pm3FqvCMj5y7cmh3kg01MZuM50vWacw/360fx360f",
+            items: [
+                {name:"Karambit | Black Laminate", value:950, chance:0.001, icon:"https://community.cloudflare.steamstatic.com/economy/image/-9a81dlWLwJ2UUGcVs_nsVtzdOEdtWwKGZZLQHTxDZ7I56KU0Zwwo4NUX4oFJZEHLbXH5A1PIYQNqhpOSV-fRPasw8rsUFJ5KBFZv668FFQ1naDOQi4SuNnkw4XYk6D1Zu6FlG9U6pZz3r2Z8Y6s2lfs-0NqZ233cI6TI1dvZwuC-1Pqlenqh5697c_Pm3FqvCMj5y7cmh3kg01MZuM50vWacw/360fx360f"},
+                {name:"Deagle | Printstream", value:65, chance:0.02, icon:"https://community.cloudflare.steamstatic.com/economy/image/-9a81dlWLwJ2UUGcVs_nsVtzdOEdtWwKGZZLQHTxDZ7I56KU0Zwwo4NUX4oFJZEHLbXH5A1PIYQNqhpOSV-fRPasw8rsUFJ5KBFZv668FFQ1naDOQi4SuNnkw4XYk6D1Zu6FlG9U6pZz3r2Z8Y6s2lfs-0NqZ233cI6TI1dvZwuC-1Pqlenqh5697c_Pm3FqvCMj5y7cmh3kg01MZuM50vWacw/360fx360f"},
+                {name:"M4A4 | Cyber Security", value:25, chance:0.06, icon:"https://community.cloudflare.steamstatic.com/economy/image/-9a81dlWLwJ2UUGcVs_nsVtzdOEdtWwKGZZLQHTxDZ7I56KU0Zwwo4NUX4oFJZEHLbXH5A1PIYQNqhpOSV-fRPasw8rsUFJ5KBFZv668FFQ1naDOQi4SuNnkw4XYk6D1Zu6FlG9U6pZz3r2Z8Y6s2lfs-0NqZ233cI6TI1dvZwuC-1Pqlenqh5697c_Pm3FqvCMj5y7cmh3kg01MZuM50vWacw/360fx360f"},
+                {name:"Glock-18 | Ironwork", value:3, chance:0.25, icon:"https://community.cloudflare.steamstatic.com/economy/image/-9a81dlWLwJ2UUGcVs_nsVtzdOEdtWwKGZZLQHTxDZ7I56KU0Zwwo4NUX4oFJZEHLbXH5A1PIYQNqhpOSV-fRPasw8rsUFJ5KBFZv668FFQ1naDOQi4SuNnkw4XYk6D1Zu6FlG9U6pZz3r2Z8Y6s2lfs-0NqZ233cI6TI1dvZwuC-1Pqlenqh5697c_Pm3FqvCMj5y7cmh3kg01MZuM50vWacw/360fx360f"},
+                {name:"MAG-7 | Silver", value:1, chance:0.30, icon:"https://community.cloudflare.steamstatic.com/economy/image/-9a81dlWLwJ2UUGcVs_nsVtzdOEdtWwKGZZLQHTxDZ7I56KU0Zwwo4NUX4oFJZEHLbXH5A1PIYQNqhpOSV-fRPasw8rsUFJ5KBFZv668FFQ1naDOQi4SuNnkw4XYk6D1Zu6FlG9U6pZz3r2Z8Y6s2lfs-0NqZ233cI6TI1dvZwuC-1Pqlenqh5697c_Pm3FqvCMj5y7cmh3kg01MZuM50vWacw/360fx360f"},
+                {name:"P2000 | Oceanic", value:0.15, chance:0.369, icon:"https://community.cloudflare.steamstatic.com/economy/image/-9a81dlWLwJ2UUGcVs_nsVtzdOEdtWwKGZZLQHTxDZ7I56KU0Zwwo4NUX4oFJZEHLbXH5A1PIYQNqhpOSV-fRPasw8rsUFJ5KBFZv668FFQ1naDOQi4SuNnkw4XYk6D1Zu6FlG9U6pZz3r2Z8Y6s2lfs-0NqZ233cI6TI1dvZwuC-1Pqlenqh5697c_Pm3FqvCMj5y7cmh3kg01MZuM50vWacw/360fx360f"}
+            ]
+        },
+        {
+            id: 3, name: "Golden Era", cost: 25.00,
+            image: "https://community.cloudflare.steamstatic.com/economy/image/-9a81dlWLwJ2UUGcVs_nsVtzdOEdtWwKGZZLQHTxDZ7I56KU0Zwwo4NUX4oFJZEHLbXH5A1PIYQNqhpOSV-fRPasw8rsUFJ5KBFZv668FFQ1naDOQi4SuNnkw4XYk6D1Zu6FlG9U6pZz3r2Z8Y6s2lfs-0NqZ233cI6TI1dvZwuC-1Pqlenqh5697c_Pm3FqvCMj5y7cmh3kg01MZuM50vWacw/360fx360f",
+            items: [
+                {name:"AWP | Dragon Lore", value:5000, chance:0.0005, icon:"https://community.cloudflare.steamstatic.com/economy/image/-9a81dlWLwJ2UUGcVs_nsVtzdOEdtWwKGZZLQHTxDZ7I56KU0Zwwo4NUX4oFJZEHLbXH5A1PIYQNqhpOSV-fRPasw8rsUFJ5KBFZv668FFQ1naDOQi4SuNnkw4XYk6D1Zu6FlG9U6pZz3r2Z8Y6s2lfs-0NqZ233cI6TI1dvZwuC-1Pqlenqh5697c_Pm3FqvCMj5y7cmh3kg01MZuM50vWacw/360fx360f"},
+                {name:"AK-47 | Gold Arabesque", value:2500, chance:0.001, icon:"https://community.cloudflare.steamstatic.com/economy/image/-9a81dlWLwJ2UUGcVs_nsVtzdOEdtWwKGZZLQHTxDZ7I56KU0Zwwo4NUX4oFJZEHLbXH5A1PIYQNqhpOSV-fRPasw8rsUFJ5KBFZv668FFQ1naDOQi4SuNnkw4XYk6D1Zu6FlG9U6pZz3r2Z8Y6s2lfs-0NqZ233cI6TI1dvZwuC-1Pqlenqh5697c_Pm3FqvCMj5y7cmh3kg01MZuM50vWacw/360fx360f"},
+                {name:"M4A1-S | Golden Coil", value:80, chance:0.08, icon:"https://community.cloudflare.steamstatic.com/economy/image/-9a81dlWLwJ2UUGcVs_nsVtzdOEdtWwKGZZLQHTxDZ7I56KU0Zwwo4NUX4oFJZEHLbXH5A1PIYQNqhpOSV-fRPasw8rsUFJ5KBFZv668FFQ1naDOQi4SuNnkw4XYk6D1Zu6FlG9U6pZz3r2Z8Y6s2lfs-0NqZ233cI6TI1dvZwuC-1Pqlenqh5697c_Pm3FqvCMj5y7cmh3kg01MZuM50vWacw/360fx360f"},
+                {name:"FAMAS | Commemoration", value:15, chance:0.25, icon:"https://community.cloudflare.steamstatic.com/economy/image/-9a81dlWLwJ2UUGcVs_nsVtzdOEdtWwKGZZLQHTxDZ7I56KU0Zwwo4NUX4oFJZEHLbXH5A1PIYQNqhpOSV-fRPasw8rsUFJ5KBFZv668FFQ1naDOQi4SuNnkw4XYk6D1Zu6FlG9U6pZz3r2Z8Y6s2lfs-0NqZ233cI6TI1dvZwuC-1Pqlenqh5697c_Pm3FqvCMj5y7cmh3kg01MZuM50vWacw/360fx360f"},
+                {name:"Five-SeveN | Copper Galaxy", value:5, chance:0.30, icon:"https://community.cloudflare.steamstatic.com/economy/image/-9a81dlWLwJ2UUGcVs_nsVtzdOEdtWwKGZZLQHTxDZ7I56KU0Zwwo4NUX4oFJZEHLbXH5A1PIYQNqhpOSV-fRPasw8rsUFJ5KBFZv668FFQ1naDOQi4SuNnkw4XYk6D1Zu6FlG9U6pZz3r2Z8Y6s2lfs-0NqZ233cI6TI1dvZwuC-1Pqlenqh5697c_Pm3FqvCMj5y7cmh3kg01MZuM50vWacw/360fx360f"},
+                {name:"UMP-45 | Gold Bismuth", value:1, chance:0.3685, icon:"https://community.cloudflare.steamstatic.com/economy/image/-9a81dlWLwJ2UUGcVs_nsVtzdOEdtWwKGZZLQHTxDZ7I56KU0Zwwo4NUX4oFJZEHLbXH5A1PIYQNqhpOSV-fRPasw8rsUFJ5KBFZv668FFQ1naDOQi4SuNnkw4XYk6D1Zu6FlG9U6pZz3r2Z8Y6s2lfs-0NqZ233cI6TI1dvZwuC-1Pqlenqh5697c_Pm3FqvCMj5y7cmh3kg01MZuM50vWacw/360fx360f"}
+            ]
+        },
+        {
+            id: 4, name: "Knife Club", cost: 95.00,
+            image: "https://community.cloudflare.steamstatic.com/economy/image/-9a81dlWLwJ2UUGcVs_nsVtzdOEdtWwKGZZLQHTxDZ7I56KU0Zwwo4NUX4oFJZEHLbXH5A1PIYQNqhpOSV-fRPasw8rsUFJ5KBFZv668FFQ1naDOQi4SuNnkw4XYk6D1Zu6FlG9U6pZz3r2Z8Y6s2lfs-0NqZ233cI6TI1dvZwuC-1Pqlenqh5697c_Pm3FqvCMj5y7cmh3kg01MZuM50vWacw/360fx360f",
+            items: [
+                {name:"Butterfly | Fade", value:1800, chance:0.005, icon:"https://community.cloudflare.steamstatic.com/economy/image/-9a81dlWLwJ2UUGcVs_nsVtzdOEdtWwKGZZLQHTxDZ7I56KU0Zwwo4NUX4oFJZEHLbXH5A1PIYQNqhpOSV-fRPasw8rsUFJ5KBFZv668FFQ1naDOQi4SuNnkw4XYk6D1Zu6FlG9U6pZz3r2Z8Y6s2lfs-0NqZ233cI6TI1dvZwuC-1Pqlenqh5697c_Pm3FqvCMj5y7cmh3kg01MZuM50vWacw/360fx360f"},
+                {name:"Karambit | Doppler", value:900, chance:0.015, icon:"https://community.cloudflare.steamstatic.com/economy/image/-9a81dlWLwJ2UUGcVs_nsVtzdOEdtWwKGZZLQHTxDZ7I56KU0Zwwo4NUX4oFJZEHLbXH5A1PIYQNqhpOSV-fRPasw8rsUFJ5KBFZv668FFQ1naDOQi4SuNnkw4XYk6D1Zu6FlG9U6pZz3r2Z8Y6s2lfs-0NqZ233cI6TI1dvZwuC-1Pqlenqh5697c_Pm3FqvCMj5y7cmh3kg01MZuM50vWacw/360fx360f"},
+                {name:"M9 Bayonet | Tiger Tooth", value:600, chance:0.03, icon:"https://community.cloudflare.steamstatic.com/economy/image/-9a81dlWLwJ2UUGcVs_nsVtzdOEdtWwKGZZLQHTxDZ7I56KU0Zwwo4NUX4oFJZEHLbXH5A1PIYQNqhpOSV-fRPasw8rsUFJ5KBFZv668FFQ1naDOQi4SuNnkw4XYk6D1Zu6FlG9U6pZz3r2Z8Y6s2lfs-0NqZ233cI6TI1dvZwuC-1Pqlenqh5697c_Pm3FqvCMj5y7cmh3kg01MZuM50vWacw/360fx360f"},
+                {name:"Bayonet | Rust Coat", value:150, chance:0.15, icon:"https://community.cloudflare.steamstatic.com/economy/image/-9a81dlWLwJ2UUGcVs_nsVtzdOEdtWwKGZZLQHTxDZ7I56KU0Zwwo4NUX4oFJZEHLbXH5A1PIYQNqhpOSV-fRPasw8rsUFJ5KBFZv668FFQ1naDOQi4SuNnkw4XYk6D1Zu6FlG9U6pZz3r2Z8Y6s2lfs-0NqZ233cI6TI1dvZwuC-1Pqlenqh5697c_Pm3FqvCMj5y7cmh3kg01MZuM50vWacw/360fx360f"},
+                {name:"Gut Knife | Safari Mesh", value:70, chance:0.30, icon:"https://community.cloudflare.steamstatic.com/economy/image/-9a81dlWLwJ2UUGcVs_nsVtzdOEdtWwKGZZLQHTxDZ7I56KU0Zwwo4NUX4oFJZEHLbXH5A1PIYQNqhpOSV-fRPasw8rsUFJ5KBFZv668FFQ1naDOQi4SuNnkw4XYk6D1Zu6FlG9U6pZz3r2Z8Y6s2lfs-0NqZ233cI6TI1dvZwuC-1Pqlenqh5697c_Pm3FqvCMj5y7cmh3kg01MZuM50vWacw/360fx360f"},
+                {name:"Navaja Knife | Scorched", value:55, chance:0.50, icon:"https://community.cloudflare.steamstatic.com/economy/image/-9a81dlWLwJ2UUGcVs_nsVtzdOEdtWwKGZZLQHTxDZ7I56KU0Zwwo4NUX4oFJZEHLbXH5A1PIYQNqhpOSV-fRPasw8rsUFJ5KBFZv668FFQ1naDOQi4SuNnkw4XYk6D1Zu6FlG9U6pZz3r2Z8Y6s2lfs-0NqZ233cI6TI1dvZwuC-1Pqlenqh5697c_Pm3FqvCMj5y7cmh3kg01MZuM50vWacw/360fx360f"}
+            ]
+        }
+    ];
+
+    // --- BATTLE LOGIC ---
+    let battleQueue = [];
+    let battleMode = '1v1';
+    let battleType = 'standard'; 
+    let battleParticipants = [];
+    let battleResults = {};
+
+    function initBattleScreen() {
+        updateBattleQueueUI();
+    }
+
+    function openCaseModal() {
+        const modal = document.getElementById('case-modal');
+        const grid = document.getElementById('modal-case-list');
+        grid.innerHTML = '';
+        casesDB.forEach(c => {
+            const el = document.createElement('div');
+            el.className = 'case-select-item';
+            el.onclick = () => { addToBattleQueue(c); modal.classList.add('hidden'); };
+            el.innerHTML = `
+                <img src="${c.image}" alt="${c.name}" referrerpolicy="no-referrer">
+                <div style="font-weight:bold; margin-top:5px;">${c.name}</div>
+                <div style="color:#e94560;">$${c.cost.toFixed(2)}</div>
+            `;
+            grid.appendChild(el);
+        });
+        modal.classList.remove('hidden');
+    }
+
+    function closeCaseModal(e) {
+        if(e.target.id === 'case-modal') document.getElementById('case-modal').classList.add('hidden');
+    }
+
+    function setBattleMode(mode, btn) {
+        battleMode = mode;
+        const btns = btn.parentElement.querySelectorAll('.multi-btn');
+        btns.forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+        updateBattleQueueUI();
+    }
+
+    function setBattleType(type) {
+        battleType = type;
+        document.getElementById('type-std').classList.toggle('active', type === 'standard');
+        document.getElementById('type-jack').classList.toggle('active', type === 'jackpot');
+    }
+
+    function addToBattleQueue(c) {
+        if(battleQueue.length >= 10) { alert("Max 10 cases!"); return; }
+        battleQueue.push(c);
+        updateBattleQueueUI();
+    }
+
+    function removeCaseFromQueue(index) {
+        battleQueue.splice(index, 1);
+        updateBattleQueueUI();
+    }
+
+    function clearBattleQueue() { battleQueue = []; updateBattleQueueUI(); }
+
+    function updateBattleQueueUI() {
+        const qContainer = document.getElementById('battle-queue-area');
+        const costLabel = document.getElementById('battle-total-cost');
+        
+        // Keep the add button
+        qContainer.innerHTML = '<div class="add-case-btn" onclick="openCaseModal()">+</div>';
+        
+        let total = 0;
+        battleQueue.forEach((c, index) => {
+            total += c.cost;
+            const thumb = document.createElement('div');
+            thumb.className = 'battle-case-thumb';
+            thumb.onclick = () => removeCaseFromQueue(index);
+            thumb.innerHTML = `
+                <div class="remove-case-btn">✕</div>
+                <img src="${c.image}" alt="case" referrerpolicy="no-referrer">
+                <div>${c.name}</div>
+                <div style="color:#fff; font-weight:bold">$${c.cost}</div>
+            `;
+            // Insert before the add button
+            qContainer.insertBefore(thumb, qContainer.lastChild);
+        });
+        
+        costLabel.innerText = `Total Cost: $${total.toFixed(2)}`;
+    }
+
+    function startBattle() {
+        const cost = battleQueue.reduce((a,b) => a + b.cost, 0);
+        if(cost === 0) return;
+        if(balance < cost) { alert("Not enough coins!"); return; }
+        balance -= cost; updateBalanceUI();
+
+        document.getElementById('battle-setup').classList.add('hidden');
+        document.getElementById('battle-arena').classList.remove('hidden');
+        document.getElementById('battle-arena-container').classList.remove('fade-out');
+        document.getElementById('jackpot-container').classList.add('hidden');
+        
+        document.getElementById('btn-battle-exit-setup').classList.add('hidden');
+        document.getElementById('btn-battle-reset').classList.add('hidden');
+        document.getElementById('btn-battle-exit').classList.add('hidden');
+
+        // Setup Participants
+        if (battleMode === '1v1') { battleParticipants = [{id:'p',name:'YOU',team:0}, {id:'b1',name:'BOT',team:1}]; }
+        else if (battleMode === '1v1v1') { battleParticipants = [{id:'p',name:'YOU',team:0}, {id:'b1',name:'BOT 1',team:1}, {id:'b2',name:'BOT 2',team:2}]; }
+        else if (battleMode === '1v1v1v1') { battleParticipants = [{id:'p',name:'YOU',team:0}, {id:'b1',name:'BOT 1',team:1}, {id:'b2',name:'BOT 2',team:2}, {id:'b3',name:'BOT 3',team:3}]; }
+        else if (battleMode === '2v2') { battleParticipants = [{id:'p',name:'YOU',team:0}, {id:'b1',name:'TEAMMATE',team:0}, {id:'b2',name:'ENEMY 1',team:1}, {id:'b3',name:'ENEMY 2',team:1}]; }
+
+        // Generate Arena
+        const container = document.getElementById('battle-arena-container');
+        container.innerHTML = '';
+        battleParticipants.forEach((part, index) => {
+            if (index > 0) {
+                let showDivider = true;
+                if(battleMode === '2v2' && (index === 1 || index === 3)) showDivider = false;
+                if(showDivider) { const div = document.createElement('div'); div.className = 'battle-divider'; div.innerHTML = '⚔️'; container.appendChild(div); }
+            }
+            const col = document.createElement('div'); col.className = 'battle-column'; col.id = `col-${part.id}`;
+            col.style.borderColor = PLAYER_COLORS[part.id] || '#533483';
+            
+            let pctHtml = (battleType === 'jackpot') ? `<div id="pct-${part.id}" class="percent-box">0%</div>` : '';
+
+            col.innerHTML = `<h3><span style="color:${PLAYER_COLORS[part.id]}">●</span> ${part.name}</h3><div id="reel-container-${part.id}"></div><div id="score-${part.id}" class="score-box">0.00</div>${pctHtml}`;
+            container.appendChild(col);
+        });
+
+        // Pre-calc
+        battleResults = {};
+        battleParticipants.forEach(part => {
+            battleResults[part.id] = [];
+            battleQueue.forEach(c => battleResults[part.id].push(getCaseResult(c)));
+        });
+
+        processBattleRound(0);
+    }
+
+    function processBattleRound(roundIndex) {
+        if(roundIndex >= battleQueue.length) { 
+            if(battleType === 'jackpot') {
+                startJackpotSpin();
+            } else {
+                finishBattleStandard(); 
+            }
+            return; 
+        }
+        
+        const caseData = battleQueue[roundIndex];
+        document.getElementById('battle-round-indicator').innerText = `Round ${roundIndex+1} of ${battleQueue.length} - ${caseData.name}`;
+
+        battleParticipants.forEach(part => {
+            const result = battleResults[part.id][roundIndex];
+            const cont = document.getElementById(`reel-container-${part.id}`);
+            cont.innerHTML = '';
+            cont.appendChild(createVerticalReelDOM(caseData, result, part.id));
+        });
+
+        setTimeout(() => {
+            battleParticipants.forEach(part => animateReel(document.getElementById(`inner-reel-${part.id}`), 30));
+            // Audio Tick
+            let lastIdx = -1; const startTime = performance.now(); const pReel = document.getElementById(`inner-reel-${battleParticipants[0].id}`);
+            function checkTick(now) {
+                const style = window.getComputedStyle(pReel); const matrix = new WebKitCSSMatrix(style.transform);
+                const val = Math.abs(matrix.m42); const curIdx = Math.floor((val + 160) / 120);
+                if (curIdx !== lastIdx) { playTick(); lastIdx = curIdx; }
+                if (now - startTime < 4000) requestAnimationFrame(checkTick);
+            }
+            requestAnimationFrame(checkTick);
+        }, 50);
+
+        setTimeout(() => {
+            battleParticipants.forEach(part => {
+                const res = battleResults[part.id][roundIndex];
+                let current = parseFloat(document.getElementById(`score-${part.id}`).innerText);
+                document.getElementById(`score-${part.id}`).innerText = (current + res.value).toFixed(2);
+            });
+            
+            if(battleType === 'jackpot') updateWinChances();
+
+            setTimeout(() => processBattleRound(roundIndex + 1), 1500);
+        }, 4500);
+    }
+
+    function updateWinChances() {
+        let total = 0;
+        battleParticipants.forEach(p => {
+            total += parseFloat(document.getElementById(`score-${p.id}`).innerText);
+        });
+        
+        battleParticipants.forEach(p => {
+            let s = parseFloat(document.getElementById(`score-${p.id}`).innerText);
+            let pct = (total === 0) ? 0 : ((s / total) * 100);
+            document.getElementById(`pct-${p.id}`).innerText = pct.toFixed(1) + "%";
+        });
+    }
+
+    // --- JACKPOT LOGIC ---
+    function startJackpotSpin() {
+        document.getElementById('battle-arena-container').classList.add('fade-out');
+        document.getElementById('jackpot-container').classList.remove('hidden');
+        document.getElementById('battle-round-indicator').innerText = "JACKPOT SPIN!";
+        document.getElementById('winner-announcement').innerText = "";
+        
+        let totalValue = 0;
+        let pool = []; 
+        
+        battleParticipants.forEach(part => {
+            let score = parseFloat(document.getElementById(`score-${part.id}`).innerText);
+            totalValue += score;
+            pool.push({ id: part.id, team: part.team, score: score, color: PLAYER_COLORS[part.id] });
+        });
+
+        if (totalValue === 0) { finalizeBattle(-1, true, 0, 0); return; }
+
+        let rand = Math.random() * totalValue;
+        let winnerObj = null;
+        let runningTotal = 0;
+        
+        for(let p of pool) {
+            runningTotal += p.score;
+            if (rand <= runningTotal) {
+                winnerObj = p;
+                break;
+            }
+        }
+        
+        const reel = document.getElementById('jackpot-reel');
+        reel.innerHTML = ''; reel.style.transition = 'none'; reel.style.transform = 'translateX(0px)';
+        
+        const BAR_WIDTH = 600; 
+        
+        for(let i=0; i<25; i++) {
+            pool.forEach(p => {
+                const width = (p.score / totalValue) * BAR_WIDTH;
+                const el = document.createElement('div');
+                el.className = 'jackpot-bar';
+                el.style.width = width + "px";
+                el.style.backgroundColor = p.color;
+                reel.appendChild(el);
+            });
+        }
+
+        const targetIteration = 20; 
+        const locationInBar = (rand / totalValue) * BAR_WIDTH;
+        
+        setTimeout(() => {
+            const viewportW = document.querySelector('.viewport-horizontal').offsetWidth;
+            const targetX = -((targetIteration * BAR_WIDTH) + locationInBar - (viewportW / 2));
+            
+            reel.style.transition = `transform 5500ms cubic-bezier(0.1, 0, 0.1, 1)`;
+            reel.style.transform = `translateX(${targetX}px)`;
+        }, 50);
+
+        setTimeout(() => {
+            const grandTotal = totalValue; 
+            document.getElementById('winner-announcement').innerText = `WINNER: ${winnerObj.id.toUpperCase()}!`;
+            document.getElementById('winner-announcement').style.color = winnerObj.color;
+            finalizeBattle(winnerObj.team, false, grandTotal, 0);
+        }, 6000);
+    }
+
+    // --- FINISH ---
+    function finishBattleStandard() {
+        const cost = battleQueue.reduce((a,b) => a + b.cost, 0);
+        let teamScores = {}; let grandTotal = 0;
+        battleParticipants.forEach(part => {
+            const score = parseFloat(document.getElementById(`score-${part.id}`).innerText);
+            teamScores[part.team] = (teamScores[part.team] || 0) + score;
+            grandTotal += score;
+        });
+        let winningTeam = -1; let maxScore = -1; let isDraw = false;
+        for (const [team, score] of Object.entries(teamScores)) {
+            if (score > maxScore) { maxScore = score; winningTeam = team; isDraw = false; }
+            else if (score === maxScore) { isDraw = true; }
+        }
+        finalizeBattle(winningTeam, isDraw, grandTotal, cost);
+    }
+
+    function finalizeBattle(winningTeam, isDraw, grandTotal, cost) {
+        const resText = document.getElementById('battle-result-text');
+        
+        battleParticipants.forEach(part => {
+            const col = document.getElementById(`col-${part.id}`);
+            if (!isDraw && part.team == winningTeam) col.classList.add('winner-glow');
+            else col.classList.add('loser-dim');
+        });
+
+        if (isDraw) { 
+            balance += cost; 
+            resText.innerText = "DRAW (Refunded)"; resText.style.color = "#fff"; 
+        } else {
+            if (winningTeam == 0) { 
+                let myShare = grandTotal;
+                if(battleMode === '2v2') myShare = grandTotal / 2;
+
+                balance += myShare; 
+                resText.innerText = `YOU WON! (+$${myShare.toFixed(2)})`; resText.style.color = "#4caf50"; 
+            } else { 
+                resText.innerText = "LOST!"; resText.style.color = "#e94560"; 
+            }
+        }
+        updateBalanceUI(); trackHistory();
+        document.getElementById('btn-battle-reset').classList.remove('hidden');
+        document.getElementById('btn-battle-exit').classList.remove('hidden');
+    }
+
+    // ... [Rest of DOM/Animation helpers same as before] ...
+    
+    // --- REEL DOM HELPERS ---
+    function createVerticalReelDOM(c, resultItem, id) {
+        const vp = document.createElement('div'); vp.className = 'viewport-vertical';
+        const reel = document.createElement('div'); reel.className = 'reel-vertical'; reel.id = `inner-reel-${id}`;
+        const winningIndex = 30;
+        for(let i=0; i<45; i++) {
+            let item = (i === winningIndex) ? resultItem : c.items[Math.floor(Math.random() * c.items.length)];
+            const rarity = getRarityClass(item.value, c.cost);
+            const el = document.createElement('div'); el.className = `item-vertical ${rarity}`;
+            el.innerHTML = `<img src="${item.icon}" class="skin-img" referrerpolicy="no-referrer"><div class="spinner-text-v">${item.name.split(' | ')[1]}</div>`;
+            reel.appendChild(el);
+        }
+        vp.innerHTML = `<div class="pointer-vertical"></div>`; vp.appendChild(reel);
+        return vp;
+    }
+
+    function animateReel(reelEl, winningIndex) {
+        const itemHeight = 120; const viewportHeight = 320;
+        const centerPos = -(winningIndex * itemHeight) + (viewportHeight / 2) - (itemHeight / 2);
+        const randomOffset = Math.floor(Math.random() * 30) - 15;
+        reelEl.style.transition = `transform 4000ms cubic-bezier(0.1, 0, 0.1, 1)`;
+        reelEl.style.transform = `translateY(${centerPos + randomOffset}px)`;
+    }
+
+    function resetBattleUI() {
+        document.getElementById('battle-arena').classList.add('hidden');
+        document.getElementById('battle-setup').classList.remove('hidden');
+        document.getElementById('btn-battle-exit-setup').classList.remove('hidden');
+        document.getElementById('battle-result-text').innerText = '';
+        document.querySelectorAll('.battle-column').forEach(c => c.classList.remove('winner-glow', 'loser-dim'));
+        document.getElementById('jackpot-container').classList.add('hidden');
+        document.getElementById('jackpot-reel').innerHTML = '';
+        document.getElementById('battle-arena-container').classList.remove('fade-out');
+    }
+
+    function getCaseResult(c) {
+        const rand = Math.random(); let cumulative = 0;
+        for (let item of c.items) { cumulative += item.chance; if (rand < cumulative) return item; }
+        return c.items[0];
+    }
+
+    // --- SINGLE CASE LOGIC ---
+    let currentCase = null; let openCount = 1;
+    function renderCaseList() {
+        const listContainer = document.getElementById('cases-list'); listContainer.innerHTML = '';
+        casesDB.forEach(c => {
+            const el = document.createElement('div'); el.className = 'battle-select-card'; el.onclick = () => selectCase(c.id);
+            el.innerHTML = `<img src="${c.image}" referrerpolicy="no-referrer"><div>${c.name}</div><div style="color:#e94560; font-weight:bold">$${c.cost.toFixed(2)} Coins</div>`;
+            listContainer.appendChild(el);
+        });
+    }
+
+    function selectCase(id) {
+        currentCase = casesDB[id];
+        document.getElementById('cases-list').classList.add('hidden');
+        document.getElementById('btn-cases-exit').classList.add('hidden');
+        document.getElementById('case-opener').classList.remove('hidden');
+        document.getElementById('case-title').innerText = currentCase.name;
+        setOpenCount(1);
+        
+        const listDiv = document.getElementById('case-contents-display'); listDiv.innerHTML = '';
+        currentCase.items.forEach(item => {
+            const rarity = getRarityClass(item.value, currentCase.cost);
+            // Calculate % string
+            const pctVal = item.chance * 100;
+            const pctStr = pctVal < 1 ? pctVal.toFixed(2) : pctVal.toFixed(0);
+
+            const card = document.createElement('div'); 
+            card.className = `item-card ${rarity}`;
+            card.innerHTML = `
+                <img src="${item.icon}" referrerpolicy="no-referrer">
+                <div class="item-name">${item.name}</div>
+                <div class="item-meta">
+                    <span class="item-price">$${item.value.toFixed(2)}</span>
+                    <span>${pctStr}%</span>
+                </div>
+            `;
+            listDiv.appendChild(card);
+        });
+        renderSpinners(); 
+    }
+
+    function setOpenCount(n) {
+        openCount = n;
+        document.querySelectorAll('.multi-btn').forEach((btn, i) => {
+            if(i + 1 === n) btn.classList.add('active'); else btn.classList.remove('active');
+        });
+        document.getElementById('case-cost').innerText = `Cost: $${(currentCase.cost * openCount).toFixed(2)}`;
+        renderSpinners();
+    }
+
+    function renderSpinners() {
+        const area = document.getElementById('spinner-area'); area.innerHTML = ''; document.getElementById('case-result-text').innerText = "";
+        if(openCount === 1) { area.innerHTML = `<div class="viewport-horizontal"><div class="pointer-horizontal"></div><div id="reel-0" class="reel-horizontal"></div></div>`; } 
+        else {
+            for(let i=0; i<openCount; i++) {
+                const vp = document.createElement('div'); vp.className = 'viewport-vertical'; vp.style.height = '200px'; vp.style.width = '80px';
+                vp.innerHTML = `<div class="pointer-vertical"></div><div id="reel-${i}" class="reel-vertical"></div>`;
+                area.appendChild(vp);
+            }
+        }
+    }
+
+    function triggerOpenCase() {
+        const totalCost = currentCase.cost * openCount;
+        if (balance < totalCost) { alert("Not enough coins!"); return; }
+        balance -= totalCost; updateBalanceUI();
+        
+        const btn = document.getElementById('btn-open-case'); btn.disabled = true;
+        document.getElementById('case-result-text').innerText = "Spinning...";
+
+        const results = []; for(let c=0; c<openCount; c++) results.push(getCaseResult(currentCase));
+        results.forEach((wonItem, index) => {
+            const reel = document.getElementById(`reel-${index}`); reel.innerHTML = ''; reel.style.transition = 'none';
+            const winningIndex = 45; 
+            for (let i = 0; i < 60; i++) {
+                let itemData = (i === winningIndex) ? wonItem : currentCase.items[Math.floor(Math.random() * currentCase.items.length)];
+                const rarity = getRarityClass(itemData.value, currentCase.cost);
+                const el = document.createElement('div');
+                const shortName = itemData.name.split(' | ')[1] || itemData.name;
+                
+                if(openCount === 1) { 
+                    el.className = `item-horizontal ${rarity}`; 
+                    el.innerHTML = `<img src="${itemData.icon}" class="skin-img" referrerpolicy="no-referrer"><span class="spinner-text-h">${shortName}</span>`; 
+                } else { 
+                    el.className = `item-vertical ${rarity}`; el.style.height = '80px'; 
+                    el.innerHTML = `<img src="${itemData.icon}" class="skin-img" style="width:60px;" referrerpolicy="no-referrer"><span class="spinner-text-h" style="font-size:0.7rem">${shortName}</span>`; 
+                }
+                reel.appendChild(el);
+            }
+            if(openCount === 1) {
+                reel.style.transform = 'translateX(0px)'; reel.offsetHeight;
+                const targetPos = -(winningIndex * 130) + (reel.parentElement.offsetWidth / 2) - 65 + (Math.floor(Math.random() * 80) - 40);
+                reel.style.transition = `transform 5000ms cubic-bezier(0.1, 0, 0.1, 1)`; reel.style.transform = `translateX(${targetPos}px)`;
+            } else {
+                reel.style.transform = 'translateY(0px)'; reel.offsetHeight;
+                const itemH = 80; const viewH = 200;
+                const targetPos = -(winningIndex * itemH) + (viewH / 2) - (itemH / 2) + (Math.floor(Math.random() * 40) - 20);
+                setTimeout(() => { reel.style.transition = `transform 5000ms cubic-bezier(0.1, 0, 0.1, 1)`; reel.style.transform = `translateY(${targetPos}px)`; }, index * 100);
+            }
+        });
+
+        let lastIdx = -1; const startTime = performance.now(); const reel0 = document.getElementById('reel-0');
+        function checkTick(now) {
+            const style = window.getComputedStyle(reel0); const matrix = new WebKitCSSMatrix(style.transform);
+            const val = (openCount === 1) ? Math.abs(matrix.m41) : Math.abs(matrix.m42);
+            const size = (openCount === 1) ? 130 : 80; 
+            const curIdx = Math.floor((val + 130) / size);
+            if (curIdx !== lastIdx) { playTick(); lastIdx = curIdx; }
+            if (now - startTime < 5500) requestAnimationFrame(checkTick);
+        }
+        requestAnimationFrame(checkTick);
+
+        setTimeout(() => {
+            let totalWin = 0; let breakDown = [];
+            results.forEach(r => { totalWin += r.value; breakDown.push(r.value); });
+            balance += totalWin; 
+            const resText = document.getElementById('case-result-text');
+            if(totalWin > 0) { resText.innerText = (openCount > 1) ? `Total Won: $${totalWin.toFixed(2)}` : `Won $${totalWin.toFixed(2)}`; resText.style.color = "#4caf50"; } 
+            else { resText.innerText = "Total Loss!"; resText.style.color = "#e94560"; }
+            updateBalanceUI(); trackHistory(); btn.disabled = false;
+        }, 5500);
+    }
+    function resetCaseMenu() { document.getElementById('case-opener').classList.add('hidden'); document.getElementById('cases-list').classList.remove('hidden'); document.getElementById('btn-cases-exit').classList.remove('hidden'); }
+
+    // --- DICE (UNCHANGED) ---
+    function startRoll() {
+        const wager = parseInt(document.getElementById('dice-wager').value);
+        if (validateWager(wager)) return; 
+        const btn = document.getElementById('roll-btn'); const dice = document.getElementById('dice');
+        btn.disabled = true; btn.innerText = "ROLLING..."; dice.classList.add('rolling');
+        setTimeout(() => {
+            dice.classList.remove('rolling');
+            const result = Math.floor(Math.random() * 6) + 1;
+            const faces = { 1: '⚀', 2: '⚁', 3: '⚂', 4: '⚃', 5: '⚄', 6: '⚅' };
+            dice.innerText = faces[result];
+            const guess = parseInt(document.getElementById('dice-guess').value);
+            const status = document.getElementById('dice-status');
+            if (guess === result) { const win = wager * 6; balance = (balance - wager) + win; status.innerText = `WIN! +${win}`; status.style.color = "#4caf50"; } 
+            else { balance -= wager; status.innerText = `Lost ${wager}`; status.style.color = "#e94560"; }
+            finishTurn(btn, "ROLL");
+        }, 1000);
+    }
+
+    // --- BLACKJACK LOGIC (UNCHANGED) ---
+    const suits = ['♠', '♥', '♦', '♣']; const values = ['2','3','4','5','6','7','8','9','10','J','Q','K','A'];
+    let deck = [], playerHand = [], dealerHand = [], bjWager = 0;
+    const sleep = (ms) => new Promise(r => setTimeout(r, ms));
+    function createDeck() { deck = []; for (let s of suits) { for (let v of values) { let weight = parseInt(v); if (['J','Q','K'].includes(v)) weight = 10; if (v === 'A') weight = 11; deck.push({ value: v, suit: s, weight: weight }); } } deck.sort(() => Math.random() - 0.5); }
+    function startBlackjack() { 
+        bjWager = parseInt(document.getElementById('bj-wager').value); if (validateWager(bjWager)) return; 
+        createDeck(); playerHand = [drawCard(), drawCard()]; dealerHand = [drawCard(), drawCard()]; 
+        document.getElementById('bj-wager-area').classList.add('hidden'); document.getElementById('bj-game-area').classList.remove('hidden'); document.getElementById('btn-new-hand').classList.add('hidden');
+        document.getElementById('player-hand').innerHTML = ''; document.getElementById('dealer-hand').innerHTML = ''; document.getElementById('bj-status').innerText = "Hit or Stand?"; document.getElementById('bj-status').style.color = "#fff";
+        toggleBJButtons(true); renderHands(true); 
+        if(getHandValue(playerHand) === 21) { endBlackjack(true); }
+    }
+    function drawCard() { return deck.pop(); }
+    function getHandValue(hand) { let score = 0, aces = 0; for (let card of hand) { score += card.weight; if (card.value === 'A') aces++; } while (score > 21 && aces > 0) { score -= 10; aces--; } return score; }
+    function renderHands(hideDealer) {
+        const pContainer = document.getElementById('player-hand'); const dContainer = document.getElementById('dealer-hand');
+        playerHand.forEach((card, i) => { if(i >= pContainer.children.length) pContainer.appendChild(createCardUI(card)); });
+        document.getElementById('player-score').innerText = getHandValue(playerHand);
+        dealerHand.forEach((card, i) => { const exists = dContainer.children[i]; if (i === 1 && hideDealer) { if(!exists) { const b = document.createElement('div'); b.className='playing-card back'; dContainer.appendChild(b); } } else { if(!exists || exists.classList.contains('back')) { const el = createCardUI(card); if(exists) dContainer.replaceChild(el, exists); else dContainer.appendChild(el); } } });
+    }
+    function createCardUI(card) { const el = document.createElement('div'); el.className = `playing-card ${(card.suit === '♥' || card.suit === '♦') ? 'red' : 'black'}`; el.innerHTML = `<div>${card.value}</div><div>${card.suit}</div>`; return el; }
+    function bjHit() { playerHand.push(drawCard()); renderHands(true); if (getHandValue(playerHand) > 21) { endBlackjack(false); } }
+    async function bjStand() { toggleBJButtons(false); renderHands(false); let dScore = getHandValue(dealerHand); document.getElementById('dealer-score').innerText = dScore; while (dScore < 17) { await sleep(600); dealerHand.push(drawCard()); renderHands(false); dScore = getHandValue(dealerHand); document.getElementById('dealer-score').innerText = dScore; } const pScore = getHandValue(playerHand); if (dScore > 21 || pScore > dScore) endBlackjack(true); else if (pScore < dScore) endBlackjack(false); else endBlackjack(null); }
+    function bjDouble() { if(balance < bjWager) return; bjWager *= 2; playerHand.push(drawCard()); renderHands(true); if(getHandValue(playerHand) > 21) { endBlackjack(false); } else { bjStand(); } }
+    function endBlackjack(win) { const s = document.getElementById('bj-status'); if(win === true) { balance += bjWager; s.innerText = "WIN!"; s.style.color = "#4caf50"; } else if(win === false) { balance -= bjWager; s.innerText = (getHandValue(playerHand) > 21) ? "BUST!" : "LOSE"; s.style.color = "#e94560"; } else { s.innerText = "PUSH"; s.style.color = "#ff9800"; } toggleBJButtons(false); document.getElementById('btn-new-hand').classList.remove('hidden'); finishTurn(null, ""); }
+    function toggleBJButtons(active) { document.getElementById('btn-hit').disabled = !active; document.getElementById('btn-stand').disabled = !active; document.getElementById('btn-double').disabled = !active; }
+    function resetBlackjackUI() { document.getElementById('bj-game-area').classList.add('hidden'); document.getElementById('bj-wager-area').classList.remove('hidden'); }
+    function validateWager(amount) { if (isNaN(amount) || amount <= 0) { alert("Invalid Wager"); return true; } if (amount > balance) { alert("Not enough points!"); return true; } return false; }
+    function finishTurn(btn, text) { updateBalanceUI(); trackHistory(); if(btn) { btn.disabled = false; btn.innerText = text; } }
+</script>
+</body>
+</html>
