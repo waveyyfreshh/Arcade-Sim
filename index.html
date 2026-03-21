@@ -1160,7 +1160,345 @@
         padding: 12px 15px; background: #16213e; border-top: 1px solid #2f4553;
         font-size: 0.75rem; color: #8a9bb0; font-weight: bold; display: flex; justify-content: space-between;
     }
+
+    /* --- KENO GAME STYLES --- */
+    .keno-grid {
+        display: grid;
+        grid-template-columns: repeat(8, 1fr); /* 8 columns wide */
+        gap: 10px;
+        margin-bottom: 30px;
+        max-width: 800px;
+        margin: 0 auto 30px auto;
+    }
+
+    .keno-tile {
+        aspect-ratio: 1;
+        background: #1b2733;
+        border-radius: 8px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-weight: 800;
+        color: #b1bad3;
+        cursor: pointer;
+        transition: all 0.1s;
+        border: 2px solid transparent;
+        font-size: 1.1rem;
+        box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+        position: relative;
+    }
+
+    .keno-tile:hover { background: #2f4553; transform: translateY(-2px); }
+    
+    /* Selected by User */
+    .keno-tile.selected {
+        background: #00e701;
+        color: #0f212e;
+        box-shadow: 0 0 15px rgba(0, 231, 1, 0.4);
+        transform: translateY(-2px);
+    }
+
+    /* Hit (Match) */
+    .keno-tile.hit {
+        background: #fff;
+        color: #0f212e;
+        border-color: #ffd700;
+        box-shadow: 0 0 20px #ffd700;
+        z-index: 10;
+        animation: popIn 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+    }
+    
+    /* Miss (House picked, User didn't) */
+    .keno-tile.house-pick {
+        border: 2px solid #e94560;
+        color: #e94560;
+    }
+    
+    /* Dim unselected tiles during result */
+    .keno-grid.result-mode .keno-tile:not(.hit):not(.house-pick) {
+        opacity: 0.3;
+    }
+
+    /* Multiplier Bar */
+    .keno-payout-track {
+        display: flex;
+        gap: 5px;
+        justify-content: center;
+        background: #16213e;
+        padding: 15px;
+        border-radius: 12px;
+        border: 1px solid #2f4553;
+        overflow-x: auto;
+    }
+
+    .payout-box {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        min-width: 60px;
+        padding: 5px;
+        border-radius: 6px;
+        background: #0f1923;
+        border: 1px solid transparent;
+        opacity: 0.5;
+        transition: 0.3s;
+    }
+    
+    .payout-box.active {
+        opacity: 1;
+        background: #2f4553;
+        border-color: #b1bad3;
+    }
+
+    .payout-box.winner {
+        opacity: 1;
+        background: #00e701;
+        color: #0f212e;
+        transform: scale(1.1);
+        box-shadow: 0 0 15px rgba(0, 231, 1, 0.4);
+        font-weight: bold;
+    }
+
+    .payout-mult { font-size: 0.9rem; font-weight: bold; }
+    .payout-hit { font-size: 0.7rem; color: #aaa; margin-bottom: 2px; }
+    .payout-box.winner .payout-hit { color: #0f212e; }
+    /* --- KENO POPUP & ANIMATION --- */
+    .keno-win-popup {
+        position: absolute;
+        top: 50%; left: 50%;
+        transform: translate(-50%, -50%) scale(0);
+        background: rgba(0, 231, 1, 0.9);
+        color: #0f212e;
+        padding: 20px 40px;
+        border-radius: 12px;
+        font-weight: 900;
+        font-size: 2rem;
+        z-index: 5000;
+        box-shadow: 0 0 50px rgba(0, 231, 1, 0.6);
+        pointer-events: none;
+        text-align: center;
+        opacity: 0;
+        transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+    }
+    
+    .keno-win-popup.show {
+        transform: translate(-50%, -50%) scale(1);
+        opacity: 1;
+    }
+
+    .keno-win-sub {
+        font-size: 1rem;
+        opacity: 0.8;
+        margin-top: 5px;
+        text-transform: uppercase;
+        letter-spacing: 1px;
+    }
+
+    /* Selected Tile Animation */
+    .keno-tile.picking {
+        animation: pulseSelect 0.2s ease-out;
+        background: #fff !important;
+        color: #000 !important;
+    }
+
+    @keyframes pulseSelect {
+        0% { transform: scale(1); }
+        50% { transform: scale(1.3); }
+        100% { transform: scale(1); }
+    }
+    /* --- INSTANT BET BUTTON --- */
+    .instant-btn {
+        background: #213743; border: 1px solid #2f4553; color: #5e7082;
+        width: 45px; height: 45px; border-radius: 8px; cursor: pointer;
+        font-size: 1.2rem; display: flex; align-items: center; justify-content: center;
+        transition: all 0.2s;
+    }
+    .instant-btn:hover { background: #2f4553; color: #fff; }
+    
+    /* Active State (Yellow Glow) */
+    .instant-btn.active {
+        background: #ffd700; color: #000; border-color: #ffd700;
+        box-shadow: 0 0 15px rgba(255, 215, 0, 0.4);
+    }
+    /* --- KENO SETTINGS MENU --- */
+    .keno-settings-overlay {
+        position: absolute; bottom: 60px; left: 0; width: 100%;
+        background: #1a2c38; border: 1px solid #2f4553; border-radius: 12px;
+        padding: 15px; z-index: 20; box-shadow: 0 -5px 20px rgba(0,0,0,0.5);
+        display: none; animation: slideUp 0.2s ease-out;
+    }
+    .keno-settings-overlay.visible { display: block; }
+    
+    .setting-row { display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; }
+    .setting-label { color: #b1bad3; font-size: 0.9rem; font-weight: bold; }
+    
+    /* Gear Button */
+    .gear-btn {
+        background: transparent; border: none; color: #b1bad3; cursor: pointer;
+        font-size: 1.2rem; padding: 10px; transition: transform 0.2s, color 0.2s;
+    }
+    .gear-btn:hover { color: #fff; transform: rotate(45deg); }
+    .gear-btn.active { color: #00e701; }
+
+    /* Payout Bar Progressive Highlight */
+    .payout-box.current-hit {
+        background: #fff !important;
+        color: #0f212e !important;
+        transform: scale(1.15);
+        box-shadow: 0 0 20px rgba(255, 255, 255, 0.6);
+        border-color: #fff;
+        z-index: 10;
+    }
+    
+    @keyframes slideUp { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+
+    /* --- KENO LAYOUT & SETTINGS --- */
+    /* Fix payout track height to prevent jumping */
+    .keno-payout-track {
+        min-height: 85px; max-height: 85px;
+        overflow-x: auto; overflow-y: hidden;
+        white-space: nowrap; scrollbar-width: thin;
+    }
+    
+    /* Settings Menu Styling */
+    .keno-settings-overlay {
+        position: absolute; bottom: 70px; left: 10px; width: calc(100% - 20px);
+        background: rgba(22, 33, 62, 0.98); border: 1px solid #2f4553; 
+        border-radius: 12px; padding: 20px; z-index: 100; 
+        box-shadow: 0 10px 40px rgba(0,0,0,0.8);
+        backdrop-filter: blur(10px);
+        display: none; transform-origin: bottom left;
+        animation: scaleUp 0.15s ease-out;
+        text-align: left;
+    }
+    .keno-settings-overlay.visible { display: block; }
+    
+    /* Disabled State for Speed Controls */
+    .setting-group.disabled { opacity: 0.3; pointer-events: none; filter: grayscale(1); }
+
+    /* Custom Slider */
+    .speed-slider {
+        -webkit-appearance: none; width: 100%; height: 6px; 
+        background: #2f3540; border-radius: 5px; outline: none; margin: 10px 0;
+    }
+    .speed-slider::-webkit-slider-thumb {
+        -webkit-appearance: none; appearance: none; width: 18px; height: 18px;
+        border-radius: 50%; background: #00e701; cursor: pointer;
+        box-shadow: 0 0 10px rgba(0, 231, 1, 0.5);
+    }
+
+    /* Speed Input Box */
+    .speed-input {
+        background: #0f1923; border: 1px solid #2f4553; color: #fff;
+        width: 60px; padding: 5px; text-align: center; border-radius: 6px;
+        font-family: monospace; font-size: 0.9rem;
+    }
+
+    /* Payout Progressive Highlight */
+    .payout-box.current-hit {
+        background: #fff !important; color: #0f212e !important;
+        transform: scale(1.15); box-shadow: 0 0 20px rgba(255, 255, 255, 0.6);
+        border-color: #fff; z-index: 10;
+    }
+
+    @keyframes scaleUp { from { transform: scale(0.9); opacity: 0; } to { transform: scale(1); opacity: 1; } }
+    /* --- PRO BATTLE ARENA (Video Style) --- */
+
+/* 1. Main Container */
+.battle-arena-container { 
+    display: flex; gap: 20px; justify-content: center; align-items: stretch; 
+    min-height: 500px; padding: 20px 0;
+}
+
+.battle-column {
+    flex: 1; max-width: 200px;
+    display: flex; flex-direction: column; /* Stack vertically */
+    gap: 15px; position: relative;
+}
+
+/* 2. The Reel (Now on TOP) */
+.battle-reel-wrapper {
+    order: 1; /* Visual Order: 1st */
+    height: 380px !important; /* Taller */
+    background: rgba(15, 20, 30, 0.5) !important;
+    border: 1px solid rgba(255,255,255,0.05) !important;
+    border-radius: 12px;
+    position: relative;
+    overflow: hidden;
+    /* The "Video" Fade Effect */
+    mask-image: linear-gradient(to bottom, transparent 0%, black 15%, black 85%, transparent 100%);
+    -webkit-mask-image: linear-gradient(to bottom, transparent 0%, black 15%, black 85%, transparent 100%);
+}
+
+/* 3. The User Card (Now on BOTTOM) */
+.battle-user-card {
+    order: 2; /* Visual Order: 2nd */
+    background: #161920; border: 1px solid #2f3540;
+    padding: 15px; border-radius: 12px;
+    display: flex; flex-direction: column; align-items: center;
+    transition: all 0.3s ease; z-index: 2;
+}
+
+/* Winner Glow on User Card */
+.winner-glow .battle-user-card {
+    border-color: #00e701;
+    box-shadow: 0 0 25px rgba(0, 231, 1, 0.15);
+    transform: translateY(-5px);
+    background: linear-gradient(180deg, #161920 0%, rgba(0, 231, 1, 0.05) 100%);
+}
+
+/* Loser State */
+.loser-dim .battle-user-card { opacity: 0.5; filter: grayscale(0.8); }
+
+/* 4. Reel Items (Larger & Cleaner) */
+.item-vertical {
+    height: 120px !important; /* Bigger items */
+    width: 100%;
+    display: flex; flex-direction: column; align-items: center; justify-content: center;
+}
+.item-vertical img {
+    height: 85px; width: auto; object-fit: contain;
+    filter: drop-shadow(0 5px 15px rgba(0,0,0,0.5));
+    transition: transform 0.3s;
+}
+
+/* 5. Center Highlight Line (The "Target") */
+.center-highlight {
+    position: absolute; top: 50%; left: 0; width: 100%; height: 130px;
+    transform: translateY(-50%);
+    background: rgba(255,255,255,0.03);
+    border-top: 1px solid rgba(255,255,255,0.1);
+    border-bottom: 1px solid rgba(255,255,255,0.1);
+    pointer-events: none; z-index: 0;
+    box-shadow: 0 0 30px rgba(0,0,0,0.5);
+}
+
+/* 6. Winner Item Pop */
+.item-vertical.winner-landed img {
+    transform: scale(1.2);
+    filter: drop-shadow(0 0 20px rgba(255, 255, 255, 0.6));
+}
+.item-vertical.winner-landed .spinner-text-v div:first-child {
+    color: #fff !important; font-size: 0.9rem !important;
+}
+
+/* 7. Top Info Bar (Jackpot Style) */
+.battle-info-bar {
+    background: linear-gradient(90deg, #161920 0%, #1f232e 100%);
+    border: 1px solid #2f3540; padding: 20px; border-radius: 16px;
+    display: flex; justify-content: center; gap: 40px; margin-bottom: 30px;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+}
+.bib-stat {
+    display: flex; flex-direction: column; align-items: center;
+    font-size: 0.8rem; color: #8a9bb0; font-weight: 700; text-transform: uppercase; letter-spacing: 1px;
+}
+.bib-highlight {
+    font-size: 1.4rem; color: #fff; margin-top: 5px; font-family: monospace;
+}
     </style>
+
+    
 </head>
 <body>
 
@@ -1173,6 +1511,7 @@
                     <a onclick="switchScreen('battle')">⚔️ Box Battles</a>
                     <a onclick="switchScreen('cases')">📦 Cases</a>
                     <a onclick="switchScreen('blackjack')">🃏 Blackjack</a>
+                    <a onclick="switchScreen('keno')">🎱 Keno</a>
                     <a onclick="switchScreen('game')">🎲 Dice</a>
                     <a onclick="switchScreen('stats')">📈 Stats</a>
                     <a onclick="openHistory()">📜 History</a>
@@ -1227,6 +1566,11 @@
                 <div style="font-size: 3rem;">🃏</div>
                 <h3>Blackjack</h3>
                 <p>Classic 21</p>
+            </div>
+            <div class="game-card" onclick="switchScreen('keno')">
+                <div style="font-size: 3rem;">🎱</div>
+                <h3>Keno</h3>
+                <p>Classic 40-Ball</p>
             </div>
         </div>
     </div>
@@ -1513,7 +1857,77 @@
             </div>
         </div>
     </div>
+<div id="keno-screen" class="screen hidden">
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;">
+            <h2 style="margin:0;">Keno</h2>
+            <button class="btn btn-ghost" style="width:auto; padding:8px 15px; font-size:0.9rem;" onclick="ProvablyFair.openModal()">⚖️ Fairness</button>
+        </div>
 
+        <div class="dice-layout"> 
+            
+            <div class="dice-sidebar" style="position: relative;" id="keno-sidebar-area">
+                
+                <div id="keno-settings" class="keno-settings-overlay">
+                    <div class="setting-row">
+                        <span class="setting-label">⚡ Instant Bet</span>
+                        <label class="switch">
+                            <input type="checkbox" id="keno-instant-check" onchange="KenoGame.toggleInstant()">
+                            <span class="slider round"></span>
+                        </label>
+                    </div>
+                    
+                    <div id="speed-control-group" class="setting-group" style="margin-top: 15px; border-top: 1px solid #2f4553; padding-top: 15px;">
+                        <div class="setting-row">
+                            <span class="setting-label">Animation Duration (s)</span>
+                            <input type="number" id="keno-speed-input" class="speed-input" value="0.5" step="0.1" min="0.1" max="5.0" oninput="KenoGame.syncSpeed('text')">
+                        </div>
+                        <input type="range" id="keno-speed-slider" class="speed-slider" min="0.25" max="2.5" step="0.05" value="0.5" oninput="KenoGame.syncSpeed('slider')">
+                        <div style="display:flex; justify-content:space-between; font-size:0.7rem; color:#5e7082; font-weight:bold;">
+                            <span>0.25s (Fast)</span>
+                            <span>2.5s (Slow)</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="input-group" style="margin-bottom:10px;">
+                    <label>Bet Amount</label>
+                    <div style="display:flex;">
+                        <span style="color:#aaa; margin-right:5px;">$</span>
+                        <input type="number" id="keno-wager" value="10.00" style="background:transparent; border:none; padding:0; width:80%;">
+                    </div>
+                </div>
+                
+                <div style="display:flex; gap:5px; margin-bottom:15px;">
+                    <button class="btn btn-secondary" onclick="adjustKenoBet(0.5)">1/2</button>
+                    <button class="btn btn-secondary" onclick="adjustKenoBet(2)">2x</button>
+                </div>
+
+                <div class="input-group" style="margin-bottom:15px;">
+                    <label>Mode (High Risk)</label>
+                    <div class="multi-control" style="width:100%;">
+                        <button class="multi-btn active" id="btn-mode-10" onclick="KenoGame.setMode(10)" style="flex:1;">10 Tiles</button>
+                        <button class="multi-btn" id="btn-mode-3" onclick="KenoGame.setMode(3)" style="flex:1;">3 Tiles</button>
+                    </div>
+                </div>
+
+                <div style="display:flex; gap:10px; margin-bottom:20px;">
+                    <button class="btn btn-secondary" id="btn-auto-pick" onclick="KenoGame.autoPick()">Auto Pick</button>
+                    <button class="btn btn-ghost" onclick="KenoGame.clear()">Clear</button>
+                </div>
+
+                <div style="display:flex; gap:10px; margin-top:auto; align-items: center;">
+                    <button class="gear-btn" id="keno-gear-btn" onclick="KenoGame.toggleSettings(event)">⚙️</button>
+                    <button class="btn btn-primary" id="btn-keno-bet" onclick="KenoGame.play()" style="flex:1; font-size:1.2rem; padding:15px; box-shadow: 0 5px 15px rgba(0,0,0,0.3);">BET</button>
+                </div>
+            </div>
+
+            <div class="dice-main" style="display:block; padding: 20px;">
+                <div id="keno-win-popup" class="keno-win-popup"></div>
+                <div id="keno-grid" class="keno-grid"></div>
+                <div id="keno-payouts" class="keno-payout-track"></div>
+            </div>
+        </div>
+    </div>
     <div id="stats-screen" class="screen hidden">
         <h2>Profit / Loss Graph</h2>
         <div style="background: #16213e; padding: 10px; border-radius: 15px; border: 1px solid #533483; max-width:800px; margin:0 auto;">
@@ -2819,13 +3233,13 @@ function setBattleType(type) {
 
 // --- UPDATED BATTLE LOGIC (PackDraw Style) ---
 
-		async function startBattle() {
+async function startBattle() {
         if(!UserSystem.checkLogin()) return;
         const cost = battleQueue.reduce((a,b) => a + b.cost, 0);
         if(cost === 0) return;
         if(balance < cost) { alert("Not enough coins!"); return; }
         
-        // --- PARTICIPANT GENERATION ---
+        // --- PARTICIPANTS SETUP ---
         let participants = [];
         if (battleMode === '1v1') {
             participants = [{id:'p',name:UserSystem.username,team:0, avatar:'👤'}, {id:'b1',name:'Bot 1',team:1, avatar:'🤖'}];
@@ -2868,9 +3282,16 @@ function setBattleType(type) {
         if (participants.length > 4) container.classList.add('six-player-mode');
         else container.classList.remove('six-player-mode');
         
+        // --- PRO HEADER STYLE ---
         const arenaHeader = document.createElement('div');
         arenaHeader.className = 'battle-info-bar';
-        arenaHeader.innerHTML = `<div class="bib-stat">Round <span class="bib-highlight" id="battle-round-counter">1 / ${battleQueue.length}</span></div><div class="bib-stat"><span class="bib-highlight" id="battle-case-name">Loading...</span></div><div class="bib-stat">Cost <span class="bib-highlight">$${cost.toFixed(2)}</span></div>`;
+        // Center aligned stats
+        arenaHeader.innerHTML = `
+            <div class="bib-stat">Round <div class="bib-highlight" id="battle-round-counter">1 / ${battleQueue.length}</div></div>
+            <div class="bib-stat">Current Case <div class="bib-highlight" id="battle-case-name">Loading...</div></div>
+            <div class="bib-stat">Total Cost <div class="bib-highlight">$${cost.toFixed(2)}</div></div>
+        `;
+        
         const oldHeader = document.querySelector('.battle-info-bar');
         if(oldHeader) oldHeader.remove();
         document.getElementById('battle-arena').insertBefore(arenaHeader, container);
@@ -2880,30 +3301,31 @@ function setBattleType(type) {
             col.className = 'battle-column'; 
             col.id = `col-${part.id}`;
             
-            // --- FIX: DETERMINE INITIAL TEXT BASED ON MODE ---
             let initText = '$0.00';
-            let initColor = ''; 
+            let initColor = '#b1bad3'; 
             
             if (battleType === 'jackpot') { initText = '0.0%'; initColor = '#fff'; }
             else if (battleType === 'point') { initText = '0'; initColor = '#00bcd4'; }
             
+            // --- REORDERED HTML (Reel Top, User Bottom) ---
             col.innerHTML = `
+                <div class="battle-reel-wrapper" id="reel-container-${part.id}"></div>
+                
                 <div class="battle-user-card">
                     <div class="buc-avatar">${part.avatar}</div>
                     <div class="buc-name">${part.name}</div>
                     <div class="buc-total" id="score-${part.id}" data-val="0" data-points="0" style="color:${initColor}">${initText}</div>
                     <div id="sub-${part.id}" style="font-size:0.75rem; color:#8a9bb0; margin-top:4px; font-weight:bold;">0%</div>
                 </div>
-                <div class="battle-reel-wrapper" id="reel-container-${part.id}"></div>
-                <div class="battle-history" id="history-${part.id}"></div>
+                
+                <div class="battle-history" id="history-${part.id}" style="display:none;"></div>
             `;
             container.appendChild(col);
 
-            // VS DIVIDERS
-            if(battleMode === '1v1' && index === 0) addVs(container);
-            if(battleMode === '2v2' && index === 1) addVs(container);
-            if(battleMode === '3v3' && index === 2) addVs(container);
-            if(battleMode === '2v2v2' && (index === 1 || index === 3)) addVs(container);
+            // Add "VS" logic if needed, or remove for clean look
+            if(index < participants.length -1 && battleMode === '1v1') {
+                // Optional: Insert VS spacer if you want
+            }
         });
 
         let results = {};
@@ -2965,10 +3387,10 @@ function setBattleType(type) {
         const ind = document.getElementById('battle-round-indicator');
         if(ind) ind.innerText = ''; 
 
-        // Config
-        const ITEM_HEIGHT = 110; 
-        const VIEWPORT_HEIGHT = 320; 
-        const WINNING_INDEX = 50; 
+        // NEW PRO CONFIG
+        const ITEM_HEIGHT = 120; // Matches CSS
+        const VIEWPORT_HEIGHT = 380; // Matches CSS
+        const WINNING_INDEX = 40; // Shorter spin for snappier feel
 
         // --- 2. RENDER REELS ---
         participants.forEach(part => {
@@ -2992,8 +3414,7 @@ function setBattleType(type) {
                 
                 const el = document.createElement('div'); 
                 el.className = `item-vertical ${rarity}`;
-                el.style.cssText = `height:${ITEM_HEIGHT}px; background:transparent !important; border:none !important; box-shadow:none !important;`;
-                
+el.style.height = `${ITEM_HEIGHT}px`;                
                 el.innerHTML = `
                     <img src="${item.icon}" class="skin-img" style="height:80px; width:auto;">
                     <div class="spinner-text-v" style="text-align:center; margin-top:4px; line-height:1.2;">
@@ -3953,6 +4374,238 @@ function finalizeBattle(winningTeam, isDraw, grandTotal, cost, participants, pfL
         
         finalizeBattle(winningTeam, isDraw, grandTotal, totalCost, participants, pfLogData);
     }
+// --- KENO ENGINE (Refined & Polished) ---
+    const KenoGame = {
+        selected: [],
+        mode: 10,
+        instant: false,
+        durationSeconds: 0.5, // Default 0.5s per ball
+        
+        payouts: {
+            3: [0, 0, 0, 81.50], 
+            10: [0, 0, 0, 0, 3.50, 8.00, 13.00, 63.00, 500.00, 800.00, 1000.00]
+        },
+
+        init: function() {
+            const grid = document.getElementById('keno-grid');
+            grid.innerHTML = '';
+            for(let i=1; i<=40; i++) {
+                const tile = document.createElement('div');
+                tile.className = 'keno-tile';
+                tile.innerText = i;
+                tile.id = `k-tile-${i}`;
+                tile.onclick = () => this.toggleTile(i);
+                grid.appendChild(tile);
+            }
+            this.setMode(10);
+            
+            // Close settings when clicking outside
+            document.addEventListener('click', (e) => {
+                const settings = document.getElementById('keno-settings');
+                const gear = document.getElementById('keno-gear-btn');
+                const sidebar = document.getElementById('keno-sidebar-area'); // Keep open if clicking inside sidebar
+                
+                // If menu is open AND click is NOT on menu AND NOT on gear AND NOT inside settings
+                if (settings.classList.contains('visible') && !settings.contains(e.target) && e.target !== gear) {
+                    settings.classList.remove('visible');
+                }
+            });
+        },
+
+        toggleSettings: function(e) {
+            e.stopPropagation(); // Prevent immediate close
+            document.getElementById('keno-settings').classList.toggle('visible');
+        },
+
+        toggleInstant: function() {
+            this.instant = document.getElementById('keno-instant-check').checked;
+            const group = document.getElementById('speed-control-group');
+            
+            if (this.instant) group.classList.add('disabled');
+            else group.classList.remove('disabled');
+        },
+
+        syncSpeed: function(source) {
+            const slider = document.getElementById('keno-speed-slider');
+            const input = document.getElementById('keno-speed-input');
+            let val;
+
+            if (source === 'slider') {
+                val = slider.value;
+                input.value = val;
+            } else {
+                val = input.value;
+                // Clamp value between min/max of slider logic
+                if(val < 0.1) val = 0.1;
+                if(val > 5.0) val = 5.0;
+                slider.value = val;
+            }
+            this.durationSeconds = parseFloat(val);
+        },
+
+        setMode: function(n) {
+            this.mode = n;
+            this.clear();
+            document.getElementById('btn-mode-10').classList.toggle('active', n === 10);
+            document.getElementById('btn-mode-3').classList.toggle('active', n === 3);
+            this.renderPayoutTable();
+        },
+
+        renderPayoutTable: function() {
+            const container = document.getElementById('keno-payouts');
+            container.innerHTML = '';
+            const table = this.payouts[this.mode];
+            table.forEach((mult, hits) => {
+                const el = document.createElement('div');
+                el.className = 'payout-box active';
+                el.id = `k-pay-${hits}`;
+                el.innerHTML = `<div class="payout-hit">${hits}x</div><div class="payout-mult">${mult}x</div>`;
+                container.appendChild(el);
+            });
+        },
+
+        toggleTile: function(num) {
+            AudioEngine.ui();
+            const idx = this.selected.indexOf(num);
+            const tile = document.getElementById(`k-tile-${num}`);
+            if (idx > -1) {
+                this.selected.splice(idx, 1);
+                tile.classList.remove('selected');
+            } else {
+                if (this.selected.length >= this.mode) return;
+                this.selected.push(num);
+                tile.classList.add('selected');
+            }
+        },
+
+        autoPick: async function() {
+            this.clear();
+            const btn = document.getElementById('btn-auto-pick');
+            btn.disabled = true; // Prevent spam
+            
+            const pool = Array.from({length: 40}, (_, i) => i + 1);
+            
+            // Fast loop to pick tiles
+            for(let i=0; i<this.mode; i++) {
+                const r = Math.floor(Math.random() * pool.length);
+                const num = pool.splice(r, 1)[0];
+                this.toggleTile(num);
+                AudioEngine.tick(); 
+                await new Promise(r => setTimeout(r, 50)); // 50ms delay between picks
+            }
+            btn.disabled = false;
+        },
+
+        clear: function() {
+            this.selected = [];
+            document.querySelectorAll('.keno-tile').forEach(t => { t.className = 'keno-tile'; });
+            document.getElementById('keno-grid').classList.remove('result-mode');
+            document.querySelectorAll('.payout-box').forEach(b => {
+                b.classList.remove('winner', 'current-hit');
+            });
+        },
+
+        showWinPopup: function(amount, multiplier) {
+            const popup = document.getElementById('keno-win-popup');
+            popup.innerHTML = `<div>${multiplier}x</div><div class="keno-win-sub">$${amount.toFixed(2)}</div>`;
+            popup.classList.add('show');
+            setTimeout(() => popup.classList.remove('show'), 1500);
+        },
+
+        highlightPayout: function(hits) {
+            const prev = document.querySelector('.payout-box.current-hit');
+            if(prev) prev.classList.remove('current-hit');
+            const curr = document.getElementById(`k-pay-${hits}`);
+            if(curr) curr.classList.add('current-hit');
+        },
+
+        play: async function() {
+            if(!UserSystem.checkLogin()) return;
+            if(this.selected.length !== this.mode) return alert(`Please select exactly ${this.mode} numbers.`);
+            
+            const wagerInput = document.getElementById('keno-wager');
+            const wager = parseFloat(wagerInput.value);
+            if(wager <= 0 || wager > balance) return alert("Invalid wager");
+
+            const btn = document.getElementById('btn-keno-bet');
+            btn.disabled = true;
+            document.getElementById('keno-settings').classList.remove('visible');
+
+            balance -= wager;
+            updateBalanceUI();
+            
+            // Audio Logic: Chip sound if normal, or if Instant (for feedback)
+            AudioEngine.chip(); 
+            
+            document.getElementById('keno-grid').classList.remove('result-mode');
+            document.querySelectorAll('.keno-tile').forEach(t => {
+                t.classList.remove('hit', 'house-pick', 'picking');
+                if(this.selected.includes(parseInt(t.innerText))) t.classList.add('selected');
+            });
+            document.querySelectorAll('.payout-box').forEach(b => b.classList.remove('winner', 'current-hit'));
+            
+            this.highlightPayout(0);
+
+            const pool = Array.from({length: 40}, (_, i) => i + 1);
+            const pfResult = await ProvablyFair.generateDeckShuffle(pool);
+            const houseNumbers = pfResult.deck.slice(0, 10);
+
+            let hits = 0;
+            
+            // Convert Seconds (0.25) to Milliseconds (250)
+            const delayMs = this.durationSeconds * 1000; 
+
+            for (let i = 0; i < houseNumbers.length; i++) {
+                const num = houseNumbers[i];
+                const tile = document.getElementById(`k-tile-${num}`);
+                
+                if(!this.instant) {
+                    tile.classList.add('picking');
+                    await new Promise(r => setTimeout(r, delayMs / 10)); // Divide total duration by 10 balls
+                    tile.classList.remove('picking');
+                }
+
+                if (this.selected.includes(num)) {
+                    hits++;
+                    tile.classList.add('hit');
+                    this.highlightPayout(hits);
+                    
+                    if(!this.instant) AudioEngine.playTone(400 + (hits * 100), 'triangle', 0.1, 0.1); 
+                } else {
+                    tile.classList.add('house-pick');
+                    if(!this.instant) AudioEngine.tick();
+                }
+            }
+
+            const table = this.payouts[this.mode];
+            const multiplier = table[hits] || 0;
+            const payout = wager * multiplier;
+            
+            document.getElementById('keno-grid').classList.add('result-mode');
+            const payBox = document.getElementById(`k-pay-${hits}`);
+            if(payBox) {
+                payBox.classList.remove('current-hit');
+                payBox.classList.add('winner');
+            }
+
+            if (payout > 0) {
+                balance += payout;
+                AudioEngine.win(); 
+                this.showWinPopup(payout, multiplier); 
+                logGame('Keno', 'Win', payout - wager, wager, pfResult);
+            } else {
+                AudioEngine.playTone(150, 'sawtooth', 0.1, 0.1); 
+                logGame('Keno', 'Loss', -wager, wager, pfResult);
+            }
+            
+            updateBalanceUI();
+            UserSystem.save();
+            LiveStats.update(payout - wager, wager, payout > 0);
+            
+            btn.disabled = false;
+        }
+    };
+    setTimeout(() => KenoGame.init(), 100);
 </script>
 </body>
 </html>
